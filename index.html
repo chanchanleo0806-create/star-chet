@@ -143,3 +143,112 @@
 </script>
 </body>
 </html>
+        <div style="display:flex; flex-direction:column; gap:5px;">
+            <input type="text" id="msgInput" placeholder="메시지 입력...">
+            <button onclick="sendMsg()">전송</button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, set, get, push, onValue, onDisconnect, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyAcBQ_Pyt4kdExDLGyNZJwWGbCdGDzVIjQ",
+        authDomain: "starchet-e9630.firebaseapp.com",
+        databaseURL: "https://starchet-e9630-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "starchet-e9630",
+        storageBucket: "starchet-e9630.firebasestorage.app",
+        messagingSenderId: "532571302538",
+        appId: "1:532571302538:web:73ad808e560947ea02db73"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    let room = "";
+    let isAdmin = false;
+
+    // 1. 방 입장 및 방장 판별
+    window.joinRoom = async () => {
+        room = document.getElementById('roomNum').value;
+        const pw = document.getElementById('roomPw').value;
+        if(!room || !pw) return alert("번호와 비번을 입력하세요.");
+
+        const roomRef = ref(db, `rooms/${room}`);
+        const snap = await get(roomRef);
+
+        if(snap.exists()) {
+            if(snap.val().password !== pw) return alert("비번 틀림!");
+            isAdmin = false;
+        } else {
+            isAdmin = true;
+            await set(roomRef, { password: pw, owner: true });
+            // 방장 종료 시 자동 폭파 설정
+            onDisconnect(ref(db, `rooms/${room}`)).remove();
+            onDisconnect(ref(db, `chats/${room}`)).remove();
+            document.getElementById('admin-badge').style.display = 'inline';
+        }
+
+        document.getElementById('login-sec').style.display = 'none';
+        document.getElementById('chat-sec').style.display = 'flex';
+        document.getElementById('room-info').innerText = `📡 Room ${room}`;
+        listenMessages();
+    };
+
+    // 2. 실시간 메시지 수신 (삭제 기능 포함)
+    function listenMessages() {
+        onValue(ref(db, `chats/${room}`), (snap) => {
+            const box = document.getElementById('messages');
+            box.innerHTML = "";
+            const data = snap.val();
+
+            if(!data && !isAdmin) {
+                alert("방장이 나갔거나 방이 삭제되었습니다.");
+                location.reload();
+            }
+
+            if(data) {
+                // 메시지 키(ID)를 포함하여 리스트 생성
+                Object.keys(data).forEach(key => {
+                    const m = data[key];
+                    const div = document.createElement('div');
+                    div.className = 'msg';
+                    
+                    // 방장일 때만 삭제 버튼 추가
+                    const delBtn = isAdmin ? `<button class="del-btn" onclick="deleteMsg('${key}')">X</button>` : "";
+                    
+                    div.innerHTML = `
+                        <small style="color:#888; font-size:10px;">${m.time}</small>
+                        <div style="margin-top:5px;">${m.text}</div>
+                        ${delBtn}
+                    `;
+                    box.appendChild(div);
+                });
+                box.scrollTop = box.scrollHeight;
+            }
+        });
+    }
+
+    // 3. 개별 메시지 삭제 함수 (방장 전용)
+    window.deleteMsg = (msgId) => {
+        if(!isAdmin) return;
+        if(confirm("이 메시지를 삭제할까요?")) {
+            remove(ref(db, `chats/${room}/${msgId}`));
+        }
+    };
+
+    // 4. 메시지 전송
+    window.sendMsg = () => {
+        const input = document.getElementById('msgInput');
+        if(!input.value) return;
+        push(ref(db, `chats/${room}`), {
+            text: input.value,
+            time: new Date().toLocaleTimeString()
+        });
+        input.value = "";
+    };
+</script>
+</body>
+</html>
+
