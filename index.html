@@ -8,9 +8,9 @@
     <style>
         :root { --bg: #9bbbd4; --me: #fef01b; --other: #ffffff; --dark: #343d46; }
         body { background: #f0f0f0; margin: 0; font-family: sans-serif; height: 100vh; display: flex; justify-content: center; overflow: hidden; }
-        #app { width: 100%; max-width: 450px; background: var(--bg); display: flex; flex-direction: column; position: relative; }
+        #app { width: 100%; max-width: 500px; background: var(--bg); display: flex; flex-direction: column; position: relative; border-left: 1px solid #ccc; border-right: 1px solid #ccc; }
         
-        /* 입장 레이어 */
+        /* 입장 화면 */
         #login-sec { position: absolute; inset: 0; background: #fff; z-index: 100; display: flex; flex-direction: column; justify-content: center; padding: 30px; }
         .in { padding: 15px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; outline: none; }
         .login-btn { padding: 15px; background: var(--dark); color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
@@ -18,37 +18,36 @@
         /* 헤더 */
         header { background: var(--dark); color: #fff; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; }
         .v-btn { border: none; padding: 8px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; cursor: pointer; color: #fff; background: #6e767d; }
-        .v-btn.on { background: #f04747; animation: pulse 1s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+        .v-btn.on { background: #f04747; animation: blink 1s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
 
         /* 채팅 구역 */
         #msgs { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 15px; }
         .m-wrap { display: flex; flex-direction: column; }
         .m-name { font-size: 11px; margin-bottom: 3px; color: #444; font-weight: bold; }
-        .m { max-width: 85%; padding: 10px; border-radius: 12px; font-size: 14px; word-break: break-all; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .m { max-width: 80%; padding: 10px; border-radius: 12px; font-size: 14px; word-break: break-all; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
         .o { align-self: flex-start; } .o .m { background: var(--other); border-top-left-radius: 2px; }
         .me { align-self: flex-end; align-items: flex-end; } .me .m { background: var(--me); border-top-right-radius: 2px; }
 
         /* 하단 바 */
-        .bottom { background: #fff; padding: 10px; display: flex; gap: 8px; }
+        .bottom { background: #fff; padding: 10px; display: flex; gap: 8px; border-top: 1px solid #ddd; }
         #input { flex: 1; border: 1px solid #ddd; padding: 12px; border-radius: 25px; outline: none; }
-        .s-btn { background: var(--me); border: none; padding: 0 18px; border-radius: 25px; font-weight: bold; cursor: pointer; }
+        .s-btn { background: var(--me); border: none; padding: 0 20px; border-radius: 25px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div id="app">
     <div id="login-sec">
-        <h2 style="text-align:center; color:var(--dark);">🔐 STAR CHAT</h2>
-        <input type="text" id="rName" class="in" placeholder="사용할 이름">
-        <input type="number" id="rNum" class="in" placeholder="방 번호 (숫자)">
+        <h2 style="text-align:center;">🔐 STAR CHAT PRO</h2>
+        <input type="text" id="rName" class="in" placeholder="내 이름 (닉네임)">
+        <input type="number" id="rNum" class="in" placeholder="방 번호 (1-100)">
         <input type="password" id="rPw" class="in" placeholder="비밀번호">
-        <button onclick="join()" class="login-btn">대화 시작</button>
-        <p style="font-size:10px; color:gray; text-align:center; margin-top:10px;">*방장이 나가면 방이 폭파됩니다.</p>
+        <button onclick="join()" class="login-btn">대화 시작하기</button>
     </div>
 
     <header>
-        <b id="info">대기 중</b>
+        <b id="info">접속 대기</b>
         <div style="display:flex; gap:8px;">
             <button id="vBtn" class="v-btn" onclick="startVoice()">🎤 음성 끔</button>
             <button onclick="location.reload()" style="background:none; border:1px solid #ff5f5f; color:#ff5f5f; padding:4px 8px; border-radius:4px; font-size:10px;">나가기</button>
@@ -56,10 +55,8 @@
     </header>
 
     <div id="msgs"></div>
-    <div id="audios" style="display:none;"></div>
-
-    <div class="bottom">
-        <input type="text" id="input" placeholder="메시지를 입력하세요..." onkeypress="if(event.keyCode==13) send()">
+    <div id="audio-container"></div> <div class="bottom">
+        <input type="text" id="input" placeholder="메시지 입력..." onkeypress="if(event.keyCode==13) send()">
         <button onclick="send()" class="s-btn">전송</button>
     </div>
 </div>
@@ -68,7 +65,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, set, get, push, onValue, onDisconnect, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // 본인의 파이어베이스 설정값으로 교체되어 있는지 꼭 확인하세요!
     const conf = {
         apiKey: "AIzaSyAcBQ_Pyt4kdExDLGyNZJwWGbCdGDzVIjQ",
         authDomain: "starchet-e9630.firebaseapp.com",
@@ -83,42 +79,37 @@
     const db = getDatabase(app);
     let room = "", myId = "u_" + Math.random().toString(36).substring(7), myName = "", peer = null;
 
-    // 입장 함수
     window.join = async () => {
         myName = document.getElementById('rName').value.trim();
         room = document.getElementById('rNum').value;
         const pw = document.getElementById('rPw').value;
-        
-        if(!myName || !room || !pw) return alert("모든 빈칸을 채워주세요!");
+        if(!myName || !room || !pw) return alert("빈칸을 모두 채워주세요!");
 
-        const rRef = ref(db, `rooms/${room}`);
-        const snap = await get(rRef);
-        
-        if(!snap.exists() || !snap.val().password) {
-            // 방장인 경우
-            await set(rRef, { password: pw, owner: myId });
-            onDisconnect(rRef).remove();
-            onDisconnect(ref(db, `chats/${room}`)).remove();
-        } else {
-            // 참여자인 경우
-            if(snap.val().password !== pw) return alert("비밀번호가 틀립니다!");
-        }
+        try {
+            const rRef = ref(db, `rooms/${room}`);
+            const snap = await get(rRef);
+            
+            if(!snap.exists() || !snap.val().password) {
+                await set(rRef, { password: pw, owner: myId });
+                onDisconnect(rRef).remove();
+                onDisconnect(ref(db, `chats/${room}`)).remove();
+            } else if(snap.val().password !== pw) return alert("비밀번호가 다릅니다!");
 
-        // PeerJS 초기화 (음성)
-        peer = new Peer(myId);
-        peer.on('call', call => {
-            navigator.mediaDevices.getUserMedia({audio: true}).then(s => {
-                call.answer(s);
-                call.on('stream', rs => play(rs));
-            }).catch(err => console.log("마이크 에러:", err));
-        });
+            // PeerJS (음성)
+            peer = new Peer(myId);
+            peer.on('call', call => {
+                navigator.mediaDevices.getUserMedia({audio: true}).then(stream => {
+                    call.answer(stream);
+                    call.on('stream', rs => playStream(rs));
+                });
+            });
 
-        document.getElementById('login-sec').style.display = 'none';
-        document.getElementById('info').innerText = `${myName} (${room}번 방)`;
-        listen();
+            document.getElementById('login-sec').style.display = 'none';
+            document.getElementById('info').innerText = `${myName} (${room}번 방)`;
+            listen();
+        } catch(e) { alert("연결 실패! 인터넷이나 설정을 확인하세요."); }
     };
 
-    // 실시간 채팅 읽기
     function listen() {
         onValue(ref(db, `chats/${room}`), (s) => {
             const box = document.getElementById('msgs'); box.innerHTML = "";
@@ -134,46 +125,38 @@
                 box.scrollTop = box.scrollHeight;
             }
         });
-        
-        // 방 폭파 감시
-        onValue(ref(db, `rooms/${room}`), (s) => {
-            if(!s.exists()) {
-                alert("방장이 나갔거나 방이 삭제되었습니다.");
-                location.reload();
-            }
-        });
     }
 
-    // 메시지 전송
     window.send = () => {
         const i = document.getElementById('input'); if(!i.value) return;
         push(ref(db, `chats/${room}`), { t: i.value, sid: myId, name: myName });
         i.value = "";
     };
 
-    // 음성 시작
     window.startVoice = async () => {
         const btn = document.getElementById('vBtn');
         try {
-            const s = await navigator.mediaDevices.getUserMedia({audio: true});
+            const stream = await navigator.mediaDevices.getUserMedia({audio: true});
             btn.classList.add('on'); btn.innerText = "🔊 음성 켬";
 
-            // 접속 중인 모든 사용자에게 전화 걸기
             const snap = await get(ref(db, `chats/${room}`));
-            const users = new Set();
-            if(snap.val()) Object.values(snap.val()).forEach(m => { if(m.sid !== myId) users.add(m.sid); });
-
-            users.forEach(uid => {
-                const call = peer.call(uid, s);
-                if(call) call.on('stream', rs => play(rs));
-            });
-            alert("음성 채팅이 활성화되었습니다. 다른 사람도 버튼을 눌러야 들립니다.");
+            if(snap.val()) {
+                const users = new Set();
+                Object.values(snap.val()).forEach(m => { if(m.sid !== myId) users.add(m.sid); });
+                users.forEach(uid => {
+                    const call = peer.call(uid, stream);
+                    call.on('stream', rs => playStream(rs));
+                });
+            }
+            alert("음성이 켜졌습니다! 상대방도 켜야 들립니다.");
         } catch(e) { alert("마이크 권한을 허용해주세요!"); }
     };
 
-    function play(s) {
-        const a = document.createElement('audio'); a.srcObject = s; a.autoplay = true;
-        document.getElementById('audios').appendChild(a);
+    function playStream(stream) {
+        let audio = document.createElement('audio');
+        audio.srcObject = stream;
+        audio.autoplay = true;
+        document.getElementById('audio-container').appendChild(audio);
     }
 </script>
 </body>
