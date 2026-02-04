@@ -1,106 +1,146 @@
-index.htmi
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>STAR CHAT - 보안 100방</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STAR CHAT PRO</title>
     <style>
         body { background: #202225; color: #fff; font-family: sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        #login-box, #chat-box-wrapper { background: #2f3136; padding: 30px; border-radius: 10px; width: 300px; text-align: center; }
-        #chat-box-wrapper { width: 90%; max-width: 500px; height: 80vh; display: none; flex-direction: column; }
-        input { width: 80%; padding: 10px; margin: 10px 0; border-radius: 5px; border: none; background: #40444b; color: #fff; }
-        button { width: 85%; padding: 10px; background: #5865f2; color: #fff; border: none; borderRadius: 5px; cursor: pointer; font-weight: bold; }
-        #messages { flex: 1; overflow-y: auto; text-align: left; padding: 10px; background: #36393f; margin-bottom: 10px; border-radius: 5px; }
-        .msg { background: #40444b; padding: 8px; border-radius: 5px; margin-bottom: 8px; font-size: 14px; }
-        .time { font-size: 10px; color: #888; display: block; }
+        #app { background: #2f3136; padding: 20px; border-radius: 12px; width: 95%; max-width: 500px; height: 90vh; display: flex; flexDirection: column; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+        input, button { padding: 12px; border-radius: 6px; border: none; margin: 5px 0; }
+        input { background: #40444b; color: #fff; width: 100%; box-sizing: border-box; }
+        button { background: #5865f2; color: #fff; cursor: pointer; font-weight: bold; }
+        #messages { flex: 1; overflow-y: auto; background: #36393f; padding: 10px; margin: 10px 0; border-radius: 6px; }
+        .msg { background: #40444b; padding: 8px; border-radius: 6px; margin-bottom: 8px; word-break: break-all; }
+        .file-link { color: #00aff4; text-decoration: none; display: block; margin-top: 5px; }
+        #voice-ui { display: flex; gap: 10px; margin-bottom: 10px; background: #292b2f; padding: 10px; border-radius: 6px; }
     </style>
 </head>
 <body>
 
-    <div id="login-box">
-        <h2>🔐 STAR CHAT</h2>
+<div id="app">
+    <div id="login-sec" style="text-align:center; margin-top: 50px;">
+        <h2>🔐 STAR CHAT PRO</h2>
         <input type="number" id="roomNum" placeholder="방 번호 (1-100)">
         <input type="password" id="roomPw" placeholder="비밀번호">
-        <button onclick="joinRoom()">접속 / 생성</button>
+        <button onclick="joinRoom()" style="width:100%">입장 및 생성</button>
     </div>
 
-    <div id="chat-box-wrapper">
-        <h3 id="room-title">방 접속 중</h3>
-        <div id="messages"></div>
-        <div style="display:flex; gap:5px;">
-            <input type="text" id="msgInput" placeholder="메시지..." style="flex:1">
-            <button onclick="sendMsg()" style="width:60px">전송</button>
+    <div id="chat-sec" style="display:none; height:100%; flex-direction:column;">
+        <div id="voice-ui">
+            <span id="room-info">방 정보</span>
+            <button onclick="startVoice()" style="background:#43b581; padding:5px 10px;">🎤 음성연결</button>
+            <audio id="remoteAudio" autoplay></audio>
         </div>
-        <button onclick="location.reload()" style="margin-top:10px; background:#f04747">나가기</button>
+        
+        <div id="messages"></div>
+
+        <div style="display:flex; flex-direction:column; gap:5px;">
+            <input type="text" id="msgInput" placeholder="메시지를 입력하세요...">
+            <div style="display:flex; gap:5px;">
+                <input type="file" id="fileInput" style="display:none" onchange="uploadFile(this)">
+                <button onclick="document.getElementById('fileInput').click()" style="background:#b9bbbe; flex:1">📁 파일</button>
+                <button onclick="sendMsg()" style="flex:2">전송</button>
+            </div>
+        </div>
     </div>
+</div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, get, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, set, get, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAcBQ_Pyt4kdExDLGyNZJwWGbCdGDzVIjQ",
-            authDomain: "starchet-e9630.firebaseapp.com",
-            databaseURL: "https://starchet-e9630-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "starchet-e9630",
-            storageBucket: "starchet-e9630.firebasestorage.app",
-            messagingSenderId: "532571302538",
-            appId: "1:532571302538:web:73ad808e560947ea02db73"
-        };
+    const firebaseConfig = {
+        apiKey: "AIzaSyAcBQ_Pyt4kdExDLGyNZJwWGbCdGDzVIjQ",
+        authDomain: "starchet-e9630.firebaseapp.com",
+        databaseURL: "https://starchet-e9630-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "starchet-e9630",
+        storageBucket: "starchet-e9630.firebasestorage.app", // 여기에 본인 스토리지 주소 확인
+        messagingSenderId: "532571302538",
+        appId: "1:532571302538:web:73ad808e560947ea02db73"
+    };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const storage = getStorage(app);
+    let room = "";
 
-        let currentRoom = "";
+    // 1. 욕설 필터
+    const badWords = ["욕설1", "욕설2", "바보"]; // 여기에 차단할 단어 추가
+    const filterText = (text) => {
+        let clean = text;
+        badWords.forEach(word => {
+            const reg = new RegExp(word, "gi");
+            clean = clean.replace(reg, "세종대왕");
+        });
+        return clean;
+    };
 
-        window.joinRoom = async () => {
-            const room = document.getElementById('roomNum').value;
-            const pw = document.getElementById('roomPw').value;
+    // 2. 방 입장
+    window.joinRoom = async () => {
+        room = document.getElementById('roomNum').value;
+        const pw = document.getElementById('roomPw').value;
+        if(!room || !pw) return alert("입력 필수!");
 
-            if (room < 1 || room > 100) return alert("1~100번 방만 가능!");
-            if (!pw) return alert("비번 입력!");
+        const roomRef = ref(db, `rooms/${room}`);
+        const snap = await get(roomRef);
+        if(snap.exists() && snap.val().password !== pw) return alert("비번 틀림!");
+        if(!snap.exists()) await set(roomRef, { password: pw });
 
-            const roomRef = ref(db, `rooms/${room}`);
-            const snap = await get(roomRef);
+        document.getElementById('login-sec').style.display = 'none';
+        document.getElementById('chat-sec').style.display = 'flex';
+        document.getElementById('room-info').innerText = "📡 " + room + "번 방";
+        listenMessages();
+    };
 
-            if (snap.exists()) {
-                if (snap.val().password !== pw) return alert("비번 틀림!");
-            } else {
-                await set(roomRef, { password: pw });
-                alert(room + "번 방이 새로 생겼습니다!");
+    // 3. 메시지 리스너
+    function listenMessages() {
+        onValue(ref(db, `chats/${room}`), (snap) => {
+            const box = document.getElementById('messages');
+            box.innerHTML = "";
+            const data = snap.val();
+            if(data) {
+                Object.values(data).forEach(m => {
+                    const div = document.createElement('div');
+                    div.className = 'msg';
+                    const content = m.file ? `<a href="${m.file}" target="_blank" class="file-link">📎 파일 다운로드</a>` : filterText(m.text);
+                    div.innerHTML = `<small style="color:#888">${m.time}</small><div>${content}</div>`;
+                    box.appendChild(div);
+                });
+                box.scrollTop = box.scrollHeight;
             }
+        });
+    }
 
-            currentRoom = room;
-            document.getElementById('login-box').style.display = 'none';
-            document.getElementById('chat-box-wrapper').style.display = 'flex';
-            document.getElementById('room-title').innerText = "📡 " + room + "번 방";
-            listenChat();
-        };
+    // 4. 전송
+    window.sendMsg = () => {
+        const input = document.getElementById('msgInput');
+        if(!input.value) return;
+        push(ref(db, `chats/${room}`), { text: input.value, time: new Date().toLocaleTimeString() });
+        input.value = "";
+    };
 
-        function listenChat() {
-            onValue(ref(db, `chats/${currentRoom}`), (snap) => {
-                const msgDiv = document.getElementById('messages');
-                msgDiv.innerHTML = "";
-                const data = snap.val();
-                if (data) {
-                    Object.values(data).forEach(m => {
-                        msgDiv.innerHTML += `<div class="msg"><span class="time">${m.time}</span>${m.text}</div>`;
-                    });
-                    msgDiv.scrollTop = msgDiv.scrollHeight;
-                }
-            });
-        }
+    // 5. 파일 업로드
+    window.uploadFile = async (input) => {
+        const file = input.files[0];
+        if(!file) return;
+        const storageRef = sRef(storage, `files/${room}/${Date.now()}_${file.name}`);
+        alert("업로드 중...");
+        await uploadBytes(storageRef, file);
+        const url = await getDownloadURL(storageRef);
+        push(ref(db, `chats/${room}`), { file: url, time: new Date().toLocaleTimeString() });
+    };
 
-        window.sendMsg = () => {
-            const input = document.getElementById('msgInput');
-            if (!input.value) return;
-            push(ref(db, `chats/${currentRoom}`), {
-                text: input.value,
-                time: new Date().toLocaleTimeString()
-            });
-            input.value = "";
-        };
-    </script>
+    // 6. 음성 채팅 (단순화된 WebRTC 예시)
+    window.startVoice = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            alert("마이크 연결됨! (실제 P2P 연결은 PeerJS 라이브러리 추가가 필요합니다)");
+            // 이 부분은 실제 상용 수준의 음성채팅을 위해 PeerJS 설정이 필요하지만, 
+            // HTML 한 장 구조를 유지하기 위해 권한 획득까지만 구현되었습니다.
+        } catch(e) { alert("마이크 권한 거부됨"); }
+    };
+</script>
 </body>
 </html>
