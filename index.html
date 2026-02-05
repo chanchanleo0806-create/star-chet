@@ -1,10 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STAR TALK FINAL</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        :root { --sidebar: #2c2c2e; --chat-bg: #f4f4f7; --point: #fee500; }
+        body { margin: 0; font-family: sans-serif; background: #eee; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+        /* 로그인 UI (화면 중앙) */
+        #login-ui { position: fixed; inset: 0; background: var(--point); z-index: 3000; display: flex; align-items: center; justify-content: center; }
+        .login-box { background: white; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; width: 280px; }
+        .login-box input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; outline: none; }
+        .login-box button { width: 100%; padding: 15px; background: #333; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+
+        /* 계정 전환 바 */
+        #auth-bar { background: #1a1a1a; padding: 8px 15px; display: none; gap: 10px; align-items: center; color: white; font-size: 11px; }
+        .acc-btn { padding: 4px 12px; border-radius: 15px; border: 1px solid #444; cursor: pointer; background: #333; }
+        .acc-btn.active { border-color: var(--point); color: var(--point); }
+
+        /* 친구 가로 목록 */
+        .story-container { background: white; padding: 10px 15px; display: flex; gap: 15px; overflow-x: auto; border-bottom: 1px solid #eee; }
+        .story-item { flex: 0 0 auto; text-align: center; width: 60px; cursor: pointer; }
+        .story-img { width: 50px; height: 50px; border-radius: 20px; background: #eee; object-fit: cover; }
+        .story-name { font-size: 11px; margin-top: 5px; color: #555; }
+
+        /* 메인 채팅창 */
+        main { flex: 1; display: flex; flex-direction: column; background: var(--chat-bg); }
+        header { padding: 15px; background: white; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        #chat-view { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .msg { padding: 10px; border-radius: 12px; max-width: 70%; font-size: 14px; }
+        .me { align-self: flex-end; background: var(--point); }
+        .o { align-self: flex-start; background: white; }
+
+        footer { padding: 15px; background: white; display: none; gap: 10px; align-items: center; }
+        #m-in { flex: 1; border: none; background: #f0f0f2; padding: 12px; border-radius: 20px; outline: none; }
+        
+        /* 통화 레이어 */
+        #call-ui { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; }
+    </style>
+</head>
+<body>
+
+<div id="auth-bar">
+    <span>계정 전환:</span>
+    <div id="acc-list" style="display:flex; gap:8px;"></div>
+    <span onclick="localStorage.removeItem('lastUser'); location.reload();" style="margin-left:auto; cursor:pointer;">로그아웃</span>
+</div>
+
+<div id="login-ui">
+    <div class="login-box">
+        <h2>STAR TALK</h2>
+        <input type="text" id="myId" placeholder="아이디">
+        <input type="password" id="myPw" placeholder="비밀번호">
+        <button onclick="window.loginFunc()">로그인 / 시작</button>
+    </div>
+</div>
+
+<div class="story-container" id="story-area"></div>
+
+<main>
+    <header>
+        <b id="target-name">대상을 선택하세요</b>
+        <button onclick="window.addF()">+ 친구추가</button>
+    </header>
+    <div id="chat-view"></div>
+    <footer id="chat-footer">
+        <input type="text" id="m-in" placeholder="메시지 입력..." onkeypress="if(event.keyCode==13) window.sendMsg()">
+        <button onclick="window.sendMsg()">전송</button>
+    </footer>
+</main>
+
+<div id="call-ui">
+    <h2 id="call-status">연결 중...</h2>
+    <video id="rv" autoplay style="width:100%; height:70%; background:black;"></video>
+    <button onclick="location.reload()" style="background:red; color:white; padding:15px; border-radius:30px; margin-top:20px;">종료</button>
+</div>
+
 <script type="module">
-    // 1. Firebase 라이브러리 로드
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, set, get, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-    import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
-    // 2. 유저님 Firebase 설정 (이 부분만 정확히 입력하세요!)
     const conf = {
         apiKey: "AIzaSyAcBQ_Pyt4kdExDLGyNZJwWGbCdGDzVIjQ",
         authDomain: "starchet-e9630.firebaseapp.com",
@@ -17,133 +94,94 @@
 
     const app = initializeApp(conf);
     const db = getDatabase(app);
-    const storage = getStorage(app);
     let myId, targetId, peer;
 
-    // 3. 자동 로그인 확인 (페이지 로드 시)
-    window.addEventListener('DOMContentLoaded', () => {
-        const lastUser = localStorage.getItem('lastUser');
-        if (lastUser) {
-            console.log("자동 로그인 시도:", lastUser);
-            autoLogin(lastUser);
-        }
-    });
-
-    async function autoLogin(id) {
-        const accs = JSON.parse(localStorage.getItem('accounts') || '{}');
-        if (accs[id]) doLoginProcess(id, accs[id]);
-    }
-
-    // 4. 메인 로그인 함수
-    window.login = async () => {
+    // 모듈 시스템에서 외부 함수 연결
+    window.loginFunc = async () => {
         const id = document.getElementById('myId').value.trim();
         const pw = document.getElementById('myPw').value.trim();
-        
-        if(!id || !pw) return alert("아이디와 비번을 입력해주세요.");
-        
-        try {
-            const uRef = ref(db, `auth/${id}`);
-            const snap = await get(uRef);
+        if(!id || !pw) return alert("아이디/비번 입력!");
+
+        const snap = await get(ref(db, `auth/${id}`));
+        if(!snap.exists() || snap.val().pw === pw) {
+            if(!snap.exists()) await set(ref(db, `auth/${id}`), {pw});
             
-            // 계정이 없으면 자동 가입, 있으면 비번 확인
-            if(!snap.exists() || snap.val().pw === pw) {
-                if(!snap.exists()) {
-                    await set(uRef, {pw: pw, nick: id, pic: ""});
-                    console.log("새 계정 생성됨");
-                }
-                
-                // 계정 정보 로컬 저장 (자동 로그인용)
-                let accs = JSON.parse(localStorage.getItem('accounts') || '{}');
-                accs[id] = pw;
-                localStorage.setItem('accounts', JSON.stringify(accs));
-                localStorage.setItem('lastUser', id);
-                
-                doLoginProcess(id, pw);
-            } else {
-                alert("비밀번호가 틀립니다.");
-            }
-        } catch (error) {
-            console.error("Firebase 연결 에러:", error);
-            alert("서버 연결에 실패했습니다. (Firebase 규칙을 확인하세요)");
-        }
+            // 로컬 저장
+            let accs = JSON.parse(localStorage.getItem('accounts') || '{}');
+            accs[id] = pw;
+            localStorage.setItem('accounts', JSON.stringify(accs));
+            localStorage.setItem('lastUser', id);
+            
+            initPeer(id);
+        } else alert("비번 틀림");
     };
 
-    // 5. 로그인 성공 후 프로세스
-    function doLoginProcess(id, pw) {
+    function initPeer(id) {
         myId = id;
-        
-        // PeerJS 연결 (아이디 중복 방지를 위해 에러 처리 포함)
         peer = new Peer(myId);
-        
-        peer.on('open', async () => {
-            console.log("PeerJS 연결 성공. ID:", myId);
+        peer.on('open', () => {
             document.getElementById('login-ui').style.display = 'none';
             document.getElementById('auth-bar').style.display = 'flex';
-            document.getElementById('my-id-label').innerText = "@" + myId;
-            
-            // 내 프로필 정보 불러오기
-            const info = (await get(ref(db, `auth/${myId}`))).val();
-            document.getElementById('my-nick').value = info?.nick || myId;
-            document.getElementById('my-pic').src = info?.pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
-            
             updateAccBar();
-            loadStories();
-            listenCall();
+            loadList();
         });
-
-        peer.on('error', (err) => {
-            console.error("PeerJS 에러 발생:", err.type);
-            if(err.type === 'unavailable-id') {
-                alert("이미 다른 곳에서 접속 중인 아이디입니다.");
-            } else {
-                alert("통신 오류가 발생했습니다.");
-            }
-            location.reload();
-        });
+        peer.on('error', (e) => { alert("ID 중복 혹은 네트워크 오류"); location.reload(); });
     }
 
-    // 계정 전환 바 업데이트
     function updateAccBar() {
         const bar = document.getElementById('acc-list');
         const accs = JSON.parse(localStorage.getItem('accounts') || '{}');
         bar.innerHTML = "";
         Object.keys(accs).forEach(id => {
-            const btn = document.createElement('div');
-            btn.className = `acc-btn ${id === myId ? 'active' : ''}`;
-            btn.innerText = id;
-            btn.onclick = () => {
-                localStorage.setItem('lastUser', id);
-                location.reload();
-            };
-            bar.appendChild(btn);
+            const active = id === myId ? 'active' : '';
+            bar.innerHTML += `<div class="acc-btn ${active}" onclick="localStorage.setItem('lastUser','${id}'); location.reload();">${id}</div>`;
         });
     }
 
-    window.logout = () => {
-        localStorage.removeItem('lastUser');
-        location.reload();
-    };
-
-    // 친구 목록 로드 (가로형)
-    function loadStories() {
-        onValue(ref(db, `users/${myId}/f`), async (snap) => {
+    function loadList() {
+        onValue(ref(db, `users/${myId}/f`), async snap => {
             const area = document.getElementById('story-area');
             area.innerHTML = "";
             if(snap.val()) {
                 for(let fid of Object.keys(snap.val())) {
-                    const info = (await get(ref(db, `auth/${fid}`))).val();
-                    const item = document.createElement('div');
-                    item.className = 'story-item';
-                    item.innerHTML = `
-                        <img class="story-img" src="${info?.pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}">
-                        <div class="story-name">${info?.nick || fid}</div>
-                    `;
-                    item.onclick = () => openChat(fid, info?.nick || fid);
-                    area.appendChild(item);
+                    area.innerHTML += `<div class="story-item" onclick="window.openRoom('${fid}')">
+                        <div class="story-img"></div>
+                        <div class="story-name">${fid}</div>
+                    </div>`;
                 }
             }
         });
     }
 
-    // [중략: 기존 openChat, send, upFile, startCall 로직 그대로 유지]
+    window.addF = () => {
+        const id = prompt("친구 ID:");
+        if(id) set(ref(db, `users/${myId}/f/${id}`), {id});
+    };
+
+    window.openRoom = (fid) => {
+        targetId = fid;
+        document.getElementById('target-name').innerText = fid;
+        document.getElementById('chat-footer').style.display = 'flex';
+        const rid = [myId, fid].sort().join("_");
+        onValue(ref(db, `msgs/${rid}`), s => {
+            const v = document.getElementById('chat-view'); v.innerHTML = "";
+            if(s.val()) Object.values(s.val()).forEach(m => {
+                const cls = m.s === myId ? 'me' : 'o';
+                v.innerHTML += `<div class="msg ${cls}">${m.t}</div>`;
+            });
+            v.scrollTop = v.scrollHeight;
+        });
+    };
+
+    window.sendMsg = () => {
+        const i = document.getElementById('m-in'); if(!i.value) return;
+        const rid = [myId, targetId].sort().join("_");
+        push(ref(db, `msgs/${rid}`), {t: i.value, s: myId}); i.value = "";
+    };
+
+    // 자동 로그인
+    const last = localStorage.getItem('lastUser');
+    if(last) initPeer(last);
 </script>
+</body>
+</html>
