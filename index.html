@@ -1,120 +1,278 @@
-<div style="padding: 10px 20px; display: flex; flex-direction: column; gap: 5px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; color: #aaa; font-size: 13px;">
-        <span>채팅 목록</span>
-        <div style="display: flex; gap: 10px;">
-            <span onclick="addFriend()" style="cursor:pointer; color:var(--point);">+ 친구</span>
-            <span onclick="createGroupChat()" style="cursor:pointer; color:var(--point);">+ 단톡방</span>
-        </div>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STAR TALK PRO</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        :root { --sidebar: #34343d; --chat-bg: #f0f2f5; --point: #fee500; --me-bg: #fee500; --white: #ffffff; }
+        body { margin: 0; font-family: 'Pretendard', sans-serif; display: flex; height: 100vh; background: #eee; color: #333; }
+        
+        /* 로그인 */
+        #login-ui { position: fixed; inset: 0; background: var(--sidebar); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
+        .login-box { background: #444; padding: 40px; border-radius: 20px; width: 280px; text-align: center; }
+        .login-box input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: none; box-sizing: border-box; }
+        .login-box button { width: 100%; padding: 12px; background: var(--point); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
+        /* 사이드바 */
+        nav { width: 320px; background: var(--sidebar); color: white; display: flex; flex-direction: column; border-right: 1px solid #222; }
+        .profile-section { padding: 25px 20px; text-align: center; border-bottom: 1px solid #444; }
+        .profile-img { width: 70px; height: 70px; border-radius: 25px; background: #555; margin: 0 auto 10px; cursor: pointer; overflow: hidden; border: 2px solid var(--point); display: block; }
+        .profile-img img { width: 100%; height: 100%; object-fit: cover; }
+        .nick-wrap { display: flex; align-items: center; justify-content: center; gap: 5px; margin-top: 5px; }
+        .nick-wrap input { background: none; border: none; color: white; text-align: center; font-size: 16px; font-weight: bold; width: 100px; border-bottom: 1px dashed #666; outline: none; }
+
+        /* 검색 & 리스트 */
+        .search-box { padding: 15px; }
+        .search-box input { width: 100%; padding: 10px; border-radius: 20px; border: none; background: #4a4a52; color: white; outline: none; font-size: 13px; }
+        .list-area { flex: 1; overflow-y: auto; }
+        .list-item { padding: 12px 20px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.2s; }
+        .list-item:hover { background: #42424a; }
+        .list-item img { width: 40px; height: 40px; border-radius: 14px; background: #666; }
+        .list-item .info { flex: 1; }
+        .list-item .info b { display: block; font-size: 14px; }
+        .list-item .info small { color: #aaa; font-size: 12px; }
+
+        /* 메인 채팅 */
+        main { flex: 1; display: flex; flex-direction: column; background: var(--chat-bg); }
+        header { padding: 18px 25px; background: white; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
+        #chat-view { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .msg-wrap { display: flex; align-items: flex-start; gap: 8px; max-width: 80%; }
+        .msg-wrap.me { align-self: flex-end; flex-direction: row-reverse; }
+        .msg-wrap img.chat-avt { width: 35px; height: 35px; border-radius: 12px; background: #ddd; }
+        .bubble { padding: 10px 14px; border-radius: 18px; font-size: 14px; line-height: 1.4; position: relative; }
+        .me .bubble { background: var(--me-bg); border-top-right-radius: 2px; }
+        .o .bubble { background: var(--white); border-top-left-radius: 2px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+
+        /* 하단 바 */
+        footer { padding: 15px 20px; background: white; display: none; gap: 12px; align-items: center; border-top: 1px solid #eee; }
+        .in-wrap { flex: 1; background: #f0f0f2; border-radius: 25px; padding: 5px 15px; display: flex; align-items: center; }
+        footer input { border: none; background: none; flex: 1; padding: 10px; outline: none; }
+        .btn-icon { font-size: 20px; cursor: pointer; color: #555; }
+
+        /* 친구 선택 모달 */
+        #group-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 2000; display: none; align-items: center; justify-content: center; }
+        .modal-box { background: white; width: 300px; border-radius: 20px; padding: 20px; }
+        .friend-sel-list { max-height: 300px; overflow-y: auto; margin: 15px 0; border-top: 1px solid #eee; }
+        .sel-item { padding: 10px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #f9f9f9; }
+    </style>
+</head>
+<body>
+
+<div id="login-ui">
+    <div class="login-box">
+        <h2 style="color:var(--point); margin-top:0;">STAR TALK</h2>
+        <input type="text" id="myId" placeholder="아이디">
+        <input type="password" id="myPw" placeholder="비밀번호">
+        <button onclick="login()">로그인 / 시작</button>
     </div>
 </div>
-<div class="f-list" id="chat-list"></div>
+
+<nav>
+    <div class="profile-section">
+        <label class="profile-img">
+            <img id="my-pic" src="https://cdn-icons-png.flaticon.com/512/149/149071.png">
+            <input type="file" hidden onchange="changePic(this)">
+        </label>
+        <div class="nick-wrap">
+            <input type="text" id="my-nick" value="닉네임" onblur="updateNick()">
+            <span style="font-size:12px; cursor:pointer;" onclick="document.getElementById('my-nick').focus()">✏️</span>
+        </div>
+        <small id="h-id-display" style="color:#888;"></small>
+    </div>
+
+    <div class="search-box">
+        <input type="text" id="search-in" placeholder="ID 검색 후 엔터..." onkeypress="if(event.keyCode==13) searchChat()">
+    </div>
+
+    <div style="padding: 0 20px 10px; display: flex; justify-content: space-between; font-size: 13px; color: #aaa;">
+        <span>목록</span>
+        <span onclick="openGroupModal()" style="color:var(--point); cursor:pointer;">+ 단톡방 만들기</span>
+    </div>
+
+    <div class="list-area" id="list-area"></div>
+</nav>
+
+<main>
+    <header>
+        <b id="chat-title">대상을 선택하세요</b>
+        <div style="display:flex; gap:15px;">
+            <span class="btn-icon" onclick="startCall()">📹</span>
+            <span class="btn-icon">📞</span>
+        </div>
+    </header>
+    <div id="chat-view"></div>
+    <footer id="chat-footer">
+        <label class="btn-icon">📎<input type="file" hidden onchange="upFile(this)"></label>
+        <div class="in-wrap">
+            <input type="text" id="m-in" placeholder="메시지를 입력하세요..." onkeypress="if(event.keyCode==13) send()">
+            <button onclick="send()" style="border:none; background:none; font-weight:bold; cursor:pointer; color:#333;">전송</button>
+        </div>
+    </footer>
+</main>
+
+<div id="group-modal">
+    <div class="modal-box">
+        <h3 style="margin:0;">친구 선택</h3>
+        <div class="friend-sel-list" id="sel-list"></div>
+        <button onclick="makeGroup()" style="width:100%; padding:12px; background:var(--sidebar); color:white; border:none; border-radius:10px; font-weight:bold;">단톡방 생성</button>
+        <button onclick="closeGroupModal()" style="width:100%; background:none; border:none; margin-top:10px; color:#888;">취소</button>
+    </div>
+</div>
 
 <script type="module">
-    // ... (기존 설정값 firebaseConfig 동일) ...
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, set, get, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
-    let isGroup = false; // 현재 방이 단톡방인지 확인
-
-    // [추가] 단톡방 만들기 기능
-    window.createGroupChat = async () => {
-        const input = prompt("함께 대화할 친구들의 ID를 입력하세요 (예: id1, id2, id3)");
-        if(!input) return;
-
-        const members = input.split(',').map(s => s.trim()).filter(s => s !== "");
-        members.push(myId); // 나도 포함
-
-        if(members.length < 3) {
-            alert("단톡방은 나를 포함해 3명 이상이어야 합니다.");
-            return;
-        }
-
-        // 단톡방 아이디 생성 (멤버 이름을 정렬해서 조합)
-        const groupId = "GROUP_" + members.sort().join("_");
-        const groupName = prompt("단톡방 이름을 정해 주세요:", members.join(", ") + "의 단톡방");
-
-        // 각 멤버의 목록에 단톡방 정보 저장
-        for(let member of members) {
-            await set(ref(db, `users/${member}/groups/${groupId}`), {
-                id: groupId,
-                name: groupName,
-                members: members
-            });
-        }
-        alert("단톡방이 생성되었습니다!");
+    const conf = {
+        apiKey: "AIzaSyAcBQ_Pyt4kdExDLGyNZJwWGbCdGDzVIjQ",
+        authDomain: "starchet-e9630.firebaseapp.com",
+        databaseURL: "https://starchet-e9630-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "starchet-e9630",
+        storageBucket: "starchet-e9630.firebasestorage.app",
+        messagingSenderId: "532571302538",
+        appId: "1:532571302538:web:73ad808e560947ea02db73"
     };
 
-    // [수정] 목록 불러오기 (개인 친구 + 단톡방 통합)
-    function loadList() {
-        // 친구 목록과 단톡방 목록을 한 번에 감시
-        onValue(ref(db, `users/${myId}`), async (snap) => {
-            const list = document.getElementById('chat-list');
-            list.innerHTML = "";
-            const data = snap.val();
+    const app = initializeApp(conf);
+    const db = getDatabase(app);
+    const storage = getStorage(app);
+    let myId, targetId, peer, isGroup = false;
 
-            // 1. 개인 친구 출력
+    // [로그인 및 초기화]
+    window.login = async () => {
+        myId = document.getElementById('myId').value.trim();
+        const pw = document.getElementById('myPw').value;
+        if(!myId) return;
+
+        const uRef = ref(db, `auth/${myId}`);
+        const snap = await get(uRef);
+        
+        if(!snap.exists() || snap.val().pw === pw) {
+            if(!snap.exists()) await set(uRef, {pw, nick: myId, pic: ""});
+            const userData = snap.val() || {nick: myId, pic: ""};
+            document.getElementById('my-nick').value = userData.nick || myId;
+            document.getElementById('my-pic').src = userData.pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+            document.getElementById('h-id-display').innerText = "@" + myId;
+            
+            peer = new Peer(myId);
+            peer.on('open', () => {
+                document.getElementById('login-ui').style.display='none';
+                loadList();
+            });
+        } else alert("비밀번호가 틀렸습니다.");
+    };
+
+    // [닉네임 및 사진 편집]
+    window.updateNick = () => set(ref(db, `auth/${myId}/nick`), document.getElementById('my-nick').value);
+    window.changePic = async (i) => {
+        const file = i.files[0];
+        const sr = sRef(storage, `pics/${myId}`);
+        await uploadBytes(sr, file);
+        const url = await getDownloadURL(sr);
+        await set(ref(db, `auth/${myId}/pic`), url);
+        document.getElementById('my-pic').src = url;
+    };
+
+    // [검색 및 리스트]
+    window.searchChat = async () => {
+        const sid = document.getElementById('search-in').value.trim();
+        if(!sid || sid === myId) return;
+        const snap = await get(ref(db, `auth/${sid}`));
+        if(snap.exists()) {
+            await set(ref(db, `users/${myId}/f/${sid}`), {id: sid});
+            openChat(sid, false);
+            document.getElementById('search-in').value = "";
+        } else alert("아이디를 찾을 수 없습니다.");
+    };
+
+    function loadList() {
+        onValue(ref(db, `users/${myId}`), async (snap) => {
+            const list = document.getElementById('list-area'); list.innerHTML = "";
+            const data = snap.val();
+            // 친구 출력
             if(data?.f) {
                 for(let fid of Object.keys(data.f)) {
-                    const fInfo = await get(ref(db, `auth/${fid}`));
-                    const d = document.createElement('div');
-                    d.className = 'f-item';
-                    d.innerHTML = `<img src="${fInfo.val()?.pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}"> 
-                                   <div><b>${fid}</b><br><small style="color:gray;">1:1 메시지</small></div>`;
-                    d.onclick = () => openChat(fid, false);
-                    list.appendChild(d);
+                    const info = (await get(ref(db, `auth/${fid}`))).val();
+                    list.innerHTML += `<div class="list-item" onclick="openChat('${fid}', false)">
+                        <img src="${info?.pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}">
+                        <div class="info"><b>${info?.nick || fid}</b><small>1:1 채팅</small></div>
+                    </div>`;
                 }
             }
-
-            // 2. 단톡방 출력
+            // 단톡방 출력
             if(data?.groups) {
                 Object.values(data.groups).forEach(g => {
-                    const d = document.createElement('div');
-                    d.className = 'f-item';
-                    d.innerHTML = `<div style="width:45px;height:45px;background:#555;border-radius:15px;display:flex;align-items:center;justify-content:center;font-size:20px;">👥</div>
-                                   <div><b>${g.name}</b><br><small style="color:#fee500;">그룹 참여 중</small></div>`;
-                    d.onclick = () => openChat(g.id, true, g.name);
-                    list.appendChild(d);
+                    list.innerHTML += `<div class="list-item" onclick="openChat('${g.id}', true, '${g.name}')">
+                        <div style="width:40px;height:40px;background:#555;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:18px;">👥</div>
+                        <div class="info"><b>${g.name}</b><small>그룹채팅</small></div>
+                    </div>`;
                 });
             }
         });
     }
 
-    // [수정] 채팅방 열기 (단톡방 대응)
-    function openChat(id, groupMode, groupName = "") {
-        targetId = id;
-        isGroup = groupMode;
-        document.getElementById('target-name').innerText = groupMode ? groupName : id;
-        document.getElementById('chat-footer').style.visibility = 'visible';
+    // [채팅 열기]
+    window.openChat = async (id, group, name = "") => {
+        targetId = id; isGroup = group;
+        document.getElementById('chat-title').innerText = group ? name : id;
+        document.getElementById('chat-footer').style.display = 'flex';
+        const rid = group ? id : [myId, id].sort().join("_");
         
-        // 방 ID 결정: 단톡방은 그대로, 개인톡은 정렬 조합
-        const rid = groupMode ? id : [myId, id].sort().join("_");
-
-        onValue(ref(db, `msgs/${rid}`), s => {
-            const b = document.getElementById('chat-view');
-            b.innerHTML = "";
+        onValue(ref(db, `msgs/${rid}`), async s => {
+            const view = document.getElementById('chat-view'); view.innerHTML = "";
             if(s.val()) {
-                Object.values(s.val()).forEach(m => {
-                    const d = document.createElement('div');
-                    d.className = `msg ${m.s === myId ? 'me' : 'o'}`;
-                    // 단톡방에서는 보낸 사람 이름 표시
-                    const senderTag = (groupMode && m.s !== myId) ? `<small style="display:block;margin-bottom:4px;color:#888;">${m.s}</small>` : "";
-                    
-                    if (m.t.includes('http')) {
-                        d.innerHTML = `${senderTag}<img src="${m.t}" style="max-width:200px;border-radius:10px;">`;
-                    } else {
-                        d.innerHTML = `${senderTag}${m.t}`;
-                    }
-                    b.appendChild(d);
-                });
-                b.scrollTop = b.scrollHeight;
+                for(let m of Object.values(s.val())) {
+                    const isMe = m.s === myId;
+                    const uInfo = !isMe ? (await get(ref(db, `auth/${m.s}`))).val() : null;
+                    view.innerHTML += `<div class="msg-wrap ${isMe ? 'me' : 'o'}">
+                        ${!isMe ? `<img class="chat-avt" src="${uInfo?.pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}">` : ''}
+                        <div class="bubble">${m.t.includes('http') ? `<img src="${m.t}" style="max-width:180px;border-radius:10px;">` : m.t}</div>
+                    </div>`;
+                }
+                view.scrollTop = view.scrollHeight;
             }
         });
-    }
+    };
 
-    // [수정] 메시지 전송 (단톡방 대응)
+    // [단톡방 만들기 - 선택형]
+    window.openGroupModal = async () => {
+        document.getElementById('group-modal').style.display = 'flex';
+        const selList = document.getElementById('sel-list'); selList.innerHTML = "";
+        const fSnap = await get(ref(db, `users/${myId}/f`));
+        if(fSnap.val()) {
+            Object.keys(fSnap.val()).forEach(fid => {
+                selList.innerHTML += `<div class="sel-item"><input type="checkbox" name="f-check" value="${fid}"> ${fid}</div>`;
+            });
+        }
+    };
+    window.closeGroupModal = () => document.getElementById('group-modal').style.display = 'none';
+    window.makeGroup = async () => {
+        const checked = Array.from(document.querySelectorAll('input[name="f-check"]:checked')).map(el => el.value);
+        if(checked.length < 1) return alert("친구를 선택하세요.");
+        checked.push(myId);
+        const gid = "GRP_" + Date.now();
+        const gName = prompt("방 이름:", "단톡방 " + checked.length);
+        for(let mId of checked) await set(ref(db, `users/${mId}/groups/${gid}`), {id: gid, name: gName, members: checked});
+        closeGroupModal();
+    };
+
+    // [메시지 전송 및 파일]
     window.send = () => {
-        const i = document.getElementById('m-in'); 
-        if(!i.value) return;
+        const i = document.getElementById('m-in'); if(!i.value) return;
         const rid = isGroup ? targetId : [myId, targetId].sort().join("_");
-        push(ref(db, `msgs/${rid}`), {t: i.value, s: myId, time: Date.now()}); 
-        i.value = "";
+        push(ref(db, `msgs/${rid}`), {t: i.value, s: myId}); i.value = "";
+    };
+    window.upFile = async (i) => {
+        const f = i.files[0]; if(!f) return;
+        const sr = sRef(storage, `files/${Date.now()}`);
+        const snap = await uploadBytes(sr, f);
+        const url = await getDownloadURL(snap.ref);
+        const rid = isGroup ? targetId : [myId, targetId].sort().join("_");
+        push(ref(db, `msgs/${rid}`), {t: url, s: myId});
     };
 </script>
+</body>
+</html>
