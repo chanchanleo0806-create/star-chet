@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>STAR TALK - PERMANENT</title>
+    <title>STAR TALK - FIXED</title>
     <style>
-        :root { --main: #fee500; --bg: #abc1d1; --white: #ffffff; --red: #ff3b30; }
+        :root { --main: #fee500; --bg: #abc1d1; --white: #ffffff; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: sans-serif; }
         html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; position: fixed; }
 
@@ -13,32 +13,32 @@
         #login-ui { position: fixed; inset: 0; background: #fff; z-index: 5000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
         .login-input { width: 100%; max-width: 300px; height: 50px; margin-bottom: 10px; padding: 15px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; }
 
-        /* [메인 레이아웃] */
+        /* [메인 화면] */
         #main-app { display: none; flex-direction: column; height: 100%; background: var(--bg); }
         header { height: 60px; background: #fff; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; flex-shrink: 0; }
-        #chat-view { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; }
+        #chat-view { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
 
-        /* [말풍선 & 읽음 숫자] */
-        .msg-wrap { display: flex; flex-direction: column; max-width: 85%; }
+        /* [말풍선 & 읽음 숫자 핵심 디자인] */
+        .msg-wrap { display: flex; flex-direction: column; max-width: 80%; }
         .msg-wrap.me { align-self: flex-end; align-items: flex-end; }
         .msg-wrap.o { align-self: flex-start; align-items: flex-start; }
-        .sender { font-size: 11px; color: #555; margin: 0 0 3px 5px; }
         
-        .bubble-row { display: flex; align-items: flex-end; gap: 5px; }
+        .bubble-row { display: flex; align-items: flex-end; gap: 4px; }
         .me .bubble-row { flex-direction: row-reverse; }
         
-        .bubble { padding: 10px 14px; border-radius: 15px; font-size: 15px; word-break: break-all; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .bubble { padding: 10px 14px; border-radius: 15px; font-size: 15px; word-break: break-all; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
         .me .bubble { background: var(--main); border-top-right-radius: 2px; }
         .o .bubble { background: var(--white); border-top-left-radius: 2px; }
 
-        .unread-cnt { color: var(--main); font-size: 11px; font-weight: bold; cursor: pointer; user-select: none; margin-bottom: 2px; }
+        /* 노란색 읽음 숫자 */
+        .unread-num { color: var(--main); font-size: 11px; font-weight: bold; margin-bottom: 2px; cursor: pointer; }
 
-        /* [하단 입력창] */
+        /* [하단바] */
         footer { height: 70px; background: #fff; display: flex; align-items: center; gap: 8px; padding: 0 10px; }
         #m-in { flex: 1; height: 45px; background: #f0f0f0; border-radius: 22px; padding: 0 15px; border: none; font-size: 16px; outline: none; }
         
-        /* [사이드바] */
-        #side-menu { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background: #fff; z-index: 4000; transition: 0.3s; overflow-y: auto; }
+        /* [사이드 메뉴] */
+        #side-menu { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background: #fff; z-index: 4000; transition: 0.3s; }
         #side-menu.open { left: 0; }
         #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 3500; display: none; }
         .room-item { padding: 15px; border-bottom: 1px solid #eee; font-weight: bold; cursor: pointer; }
@@ -47,27 +47,26 @@
 <body>
 
     <div id="login-ui">
-        <h2 style="margin-bottom:20px;">STAR TALK</h2>
+        <h2>STAR TALK</h2>
         <input type="text" id="myId" class="login-input" placeholder="아이디">
         <input type="password" id="myPw" class="login-input" placeholder="비밀번호">
-        <button onclick="window.handleLogin()" style="width:100%; max-width:300px; height:50px; background:#000; color:#fff; border:none; border-radius:10px; font-weight:bold;">시작하기</button>
-        <p id="auto-status" style="font-size:12px; color:#999; margin-top:15px;">아이디와 비번을 입력하세요.</p>
+        <button onclick="window.handleLogin()" style="width:100%; max-width:300px; height:50px; background:#000; color:#fff; border-radius:10px;">로그인</button>
     </div>
 
     <div id="overlay" onclick="window.toggleMenu()"></div>
     <nav id="side-menu">
         <div style="padding:20px; background:#f9f9f9; display:flex; justify-content:space-between; align-items:center;">
-            <b>채팅 목록</b>
-            <button onclick="window.createGroup()" style="font-size:12px;">+ 단톡방</button>
+            <b>채팅방 목록</b>
+            <button onclick="window.createGroup()" style="padding:5px 10px; background:var(--main); border:none; border-radius:5px; font-weight:bold;">+ 생성</button>
         </div>
         <div id="chat-list"></div>
-        <button onclick="window.handleLogout()" style="width:100%; padding:20px; border:none; color:var(--red); background:none; font-weight:bold;">로그아웃</button>
+        <button onclick="window.handleLogout()" style="width:100%; padding:15px; border:none; color:red; position:absolute; bottom:0;">로그아웃</button>
     </nav>
 
     <main id="main-app">
         <header>
             <button onclick="window.toggleMenu()" style="background:none; border:none; font-size:24px;">≡</button>
-            <b id="chat-title">방을 선택하세요</b>
+            <b id="chat-title">방을 선택해 주세요</b>
             <div style="width:24px;"></div>
         </header>
         <div id="chat-view"></div>
@@ -93,7 +92,7 @@
     const db = getDatabase(app);
     let myId, currentChatId, currentMembers = [];
 
-    // [1] 로그인 & 자동로그인
+    // [1] 로그인 (자동로그인 포함)
     window.handleLogin = async () => {
         const id = document.getElementById('myId').value.trim().toLowerCase();
         const pw = document.getElementById('myPw').value.trim();
@@ -107,39 +106,33 @@
             document.getElementById('login-ui').style.display = 'none';
             document.getElementById('main-app').style.display = 'flex';
             loadChatRooms();
-        } else { alert("비밀번호 오류"); localStorage.clear(); }
+        } else { alert("비밀번호 오류"); }
     };
 
-    window.addEventListener('load', () => {
-        const sid = localStorage.getItem('st_id'), spw = localStorage.getItem('st_pw');
-        if(sid && spw) {
-            document.getElementById('myId').value = sid; document.getElementById('myPw').value = spw;
-            window.handleLogin();
-        }
-    });
-
-    // [2] 단톡방 생성
+    // [2] 단톡방 생성 핵심 로직
     window.createGroup = async () => {
-        const input = prompt("초대할 아이디들을 쉼표(,)로 구분해 입력하세요.");
-        if(!input) return;
-        let members = input.split(',').map(s => s.trim().toLowerCase());
+        const res = prompt("초대할 아이디들을 입력하세요 (쉼표 구분)\n예: user1, user2");
+        if(!res) return;
+        let members = res.split(',').map(s => s.trim().toLowerCase()).filter(s => s !== "");
         members.push(myId);
         members = [...new Set(members)];
 
         const roomId = "room_" + Date.now();
-        const roomName = (members.length > 2) ? `${members[0]} 외 ${members.length-1}명` : members.join(', ');
+        const roomName = members.length > 2 ? `${members[0]} 외 ${members.length-1}명` : members.join(', ');
 
         for(const m of members) {
-            await set(ref(db, `userRooms/${m}/${roomId}`), { name: roomName, members: members });
+            await update(ref(db, `userRooms/${m}/${roomId}`), { name: roomName, members: members });
         }
+        alert("방이 생성되었습니다!");
         window.toggleMenu();
     };
 
-    // [3] 채팅 목록
+    // [3] 채팅 목록 로드
     function loadChatRooms() {
         onValue(ref(db, `userRooms/${myId}`), snap => {
             const list = document.getElementById('chat-list'); list.innerHTML = "";
-            if(snap.val()) Object.entries(snap.val()).forEach(([rid, info]) => {
+            const rooms = snap.val();
+            if(rooms) Object.entries(rooms).forEach(([rid, info]) => {
                 const div = document.createElement('div');
                 div.className = "room-item";
                 div.innerHTML = `💬 ${info.name}`;
@@ -149,7 +142,7 @@
         });
     }
 
-    // [4] 채팅방 입장 및 읽음 확인 (자동삭제 제거됨)
+    // [4] 채팅방 입장 및 읽음 숫자 처리
     window.enterChat = (rid, info) => {
         currentChatId = rid;
         currentMembers = info.members;
@@ -157,11 +150,11 @@
         
         onValue(ref(db, `msgs/${rid}`), snap => {
             const v = document.getElementById('chat-view'); v.innerHTML = "";
-            const msgs = snap.val();
-            if(!msgs) return;
+            const data = snap.val();
+            if(!data) return;
 
-            Object.entries(msgs).forEach(([mid, m]) => {
-                // 읽음 처리 업데이트
+            Object.entries(data).forEach(([mid, m]) => {
+                // 실시간 읽음 업데이트
                 if (!m.readers || !m.readers[myId]) {
                     update(ref(db, `msgs/${rid}/${mid}/readers`), { [myId]: true });
                 }
@@ -174,10 +167,9 @@
                 const wrap = document.createElement('div');
                 wrap.className = `msg-wrap ${isMe ? 'me' : 'o'}`;
                 wrap.innerHTML = `
-                    ${!isMe ? `<span class="sender">${m.s}</span>` : ''}
                     <div class="bubble-row">
                         <div class="bubble">${m.t}</div>
-                        ${unreadCount > 0 ? `<span class="unread-cnt" onclick="alert('안 읽은 사람: ${unreadList.join(', ')}')">${unreadCount}</span>` : ''}
+                        ${unreadCount > 0 ? `<span class="unread-num" onclick="alert('안 읽은 사람: ${unreadList.join(', ')}')">${unreadCount}</span>` : ''}
                     </div>
                 `;
                 v.appendChild(wrap);
@@ -196,11 +188,18 @@
         i.value = "";
     };
 
+    // [기타 기능]
     window.toggleMenu = () => {
-        document.getElementById('side-menu').classList.toggle('open');
-        document.getElementById('overlay').style.display = document.getElementById('side-menu').classList.contains('open') ? 'block' : 'none';
+        const menu = document.getElementById('side-menu');
+        const overlay = document.getElementById('overlay');
+        const isOpen = menu.classList.toggle('open');
+        overlay.style.display = isOpen ? 'block' : 'none';
     };
     window.handleLogout = () => { localStorage.clear(); location.reload(); };
+    window.addEventListener('load', () => {
+        const sid = localStorage.getItem('st_id'), spw = localStorage.getItem('st_pw');
+        if(sid && spw) { document.getElementById('myId').value = sid; document.getElementById('myPw').value = spw; window.handleLogin(); }
+    });
 </script>
 </body>
 </html>
