@@ -2,58 +2,67 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>STAR TALK ANDROID FIX</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>STAR TALK - CALL ENABLED</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        :root { --point: #fee500; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; font-family: sans-serif; background: #f4f4f7; height: 100vh; display: flex; flex-direction: column; }
-
+        :root { --point: #fee500; --bg: #f4f4f7; }
+        body { margin: 0; font-family: sans-serif; background: var(--bg); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        
         /* 로그인 */
         #login-ui { position: fixed; inset: 0; background: var(--point); z-index: 3000; display: flex; align-items: center; justify-content: center; }
-        .login-box { background: white; padding: 25px; border-radius: 20px; width: 85%; max-width: 300px; text-align: center; }
-        .login-box input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 10px; outline: none; }
+        .login-box { background: white; padding: 25px; border-radius: 20px; width: 85%; max-width: 320px; text-align: center; }
+        .login-box input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 10px; width: 100%; }
         .login-box button { width: 100%; padding: 15px; background: #333; color: white; border: none; border-radius: 10px; font-weight: bold; }
 
-        /* 메인 레이아웃 */
-        main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-        header { padding: 12px 15px; background: white; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
-        #chat-view { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 8px; background: #f4f4f7; }
-        
-        /* 메시지 스타일 */
-        .msg { padding: 10px 14px; border-radius: 15px; max-width: 75%; font-size: 15px; word-break: break-all; line-height: 1.4; }
-        .me { align-self: flex-end; background: var(--point); border-top-right-radius: 2px; }
-        .o { align-self: flex-start; background: white; border-top-left-radius: 2px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        /* 메인 상단바 (전화버튼 포함) */
+        header { padding: 15px; background: white; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+        .call-btn { background: #4cd964; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
 
-        /* 안드로이드 키보드 대응 하단 입력창 */
-        footer { padding: 10px; background: white; display: none; gap: 8px; border-top: 1px solid #eee; align-items: center; }
-        #m-in { flex: 1; border: none; background: #f0f0f2; padding: 12px 15px; border-radius: 20px; font-size: 16px; outline: none; }
-        #send-btn { background: var(--point); border: none; padding: 10px 15px; border-radius: 15px; font-weight: bold; cursor: pointer; min-width: 60px; }
+        /* 채팅창 */
+        #chat-view { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .msg { padding: 10px 14px; border-radius: 15px; max-width: 75%; font-size: 15px; word-break: break-all; }
+        .me { align-self: flex-end; background: var(--point); }
+        .o { align-self: flex-start; background: white; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+
+        /* 하단 입력창 */
+        footer { padding: 10px; background: white; display: none; gap: 8px; border-top: 1px solid #eee; }
+        #m-in { flex: 1; border: none; background: #f0f0f2; padding: 12px; border-radius: 20px; outline: none; font-size: 16px; }
+
+        /* 통화 중 화면 */
+        #call-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); color: white; z-index: 4000; display: none; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
 
 <div id="login-ui">
     <div class="login-box">
-        <h3>STAR TALK</h3>
+        <h2>STAR TALK</h2>
         <input type="text" id="myId" placeholder="아이디" inputmode="email">
         <input type="password" id="myPw" placeholder="비밀번호">
-        <button onclick="window.handleLogin()">시작하기</button>
+        <button onclick="window.handleLogin()">로그인</button>
     </div>
 </div>
 
-<main>
+<main id="main-app" style="display:none; flex-direction:column; height:100%;">
     <header>
-        <b id="target-name">대상 없음</b>
-        <button onclick="window.handleAddFriend()" style="font-size:12px;">+ 친구</button>
+        <b id="target-name">대상 선택</b>
+        <div style="display:flex; gap:10px;">
+            <button class="call-btn" id="call-ui-btn" style="display:none;" onclick="window.makeCall()">📞</button>
+            <button onclick="window.handleAddFriend()">+ 친구</button>
+        </div>
     </header>
     <div id="chat-view"></div>
     <footer id="chat-footer">
-        <input type="text" id="m-in" placeholder="메시지..." autocomplete="off">
-        <button id="send-btn" onclick="window.handleSend()">전송</button>
+        <input type="text" id="m-in" placeholder="메시지 입력..." onkeypress="if(event.keyCode==13) window.handleSend()">
+        <button onclick="window.handleSend()" style="border:none; background:none; font-weight:bold;">전송</button>
     </footer>
 </main>
+
+<div id="call-overlay">
+    <h3 id="call-status">연결 중...</h3>
+    <button onclick="location.reload()" style="background:red; color:white; border:none; padding:15px 30px; border-radius:30px; margin-top:20px;">통화 종료</button>
+</div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -71,7 +80,7 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    let myId, targetId, peer;
+    let myId, targetId, peer, myStream;
 
     window.handleLogin = async () => {
         const id = document.getElementById('myId').value.trim().toLowerCase();
@@ -90,60 +99,71 @@
         peer = new Peer(myId, { config: {'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }]} });
         peer.on('open', () => {
             document.getElementById('login-ui').style.display = 'none';
-            loadFriends();
-        });
-    }
-
-    window.handleAddFriend = async () => {
-        const fid = prompt("친구 아이디:").toLowerCase();
-        if(fid && fid !== myId) set(ref(db, `users/${myId}/f/${fid}`), {id: fid});
-    };
-
-    function loadFriends() {
-        onValue(ref(db, `users/${myId}/f`), snap => {
-            if(!snap.val()) return;
-            // 친구를 누르면 채팅창 활성화 (테스트용으로 자동 첫번째 친구 연결 로직 생략)
-            Object.keys(snap.val()).forEach(fid => {
-                window.openChat(fid); // 예시: 목록 클릭 시 호출되도록 연동
+            document.getElementById('main-app').style.display = 'flex';
+            
+            // 수신 대기
+            peer.on('call', async (call) => {
+                if (confirm(call.peer + "님의 전화를 받으시겠습니까?")) {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    call.answer(stream);
+                    handleStream(call);
+                }
             });
         });
     }
 
-    // 전송 버튼과 엔터키 완벽 대응
-    window.handleSend = () => {
-        const i = document.getElementById('m-in');
-        if(!i.value || !targetId) return;
-
-        const rid = [myId, targetId].sort().join("_");
-        push(ref(db, `msgs/${rid}`), {t: i.value, s: myId});
-        
-        i.value = "";
-        i.focus(); // 모바일에서 전송 후 키보드 유지
+    window.makeCall = async () => {
+        if(!targetId) return;
+        document.getElementById('call-overlay').style.display = 'flex';
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const call = peer.call(targetId, stream);
+            handleStream(call);
+        } catch (e) {
+            alert("마이크 권한이 필요합니다.");
+            document.getElementById('call-overlay').style.display = 'none';
+        }
     };
 
-    // 모바일 엔터키 전송 이벤트 리스너
-    document.getElementById('m-in').addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            window.handleSend();
+    function handleStream(call) {
+        call.on('stream', (remoteStream) => {
+            document.getElementById('call-status').innerText = "통화 중...";
+            const audio = new Audio();
+            audio.srcObject = remoteStream;
+            audio.play();
+        });
+    }
+
+    window.handleAddFriend = async () => {
+        const fid = prompt("친구 ID:").toLowerCase();
+        if(fid && fid !== myId) {
+            set(ref(db, `users/${myId}/f/${fid}`), {id: fid});
+            // 친구를 추가하자마자 테스트를 위해 바로 대화방 열기 가능
+            window.openChat(fid);
         }
-    });
+    };
 
     window.openChat = (fid) => {
         targetId = fid;
         document.getElementById('target-name').innerText = fid;
         document.getElementById('chat-footer').style.display = 'flex';
+        document.getElementById('call-ui-btn').style.display = 'flex'; // 전화버튼 등장
         const rid = [myId, fid].sort().join("_");
-        
         onValue(ref(db, `msgs/${rid}`), s => {
-            const v = document.getElementById('chat-view');
-            v.innerHTML = "";
+            const v = document.getElementById('chat-view'); v.innerHTML = "";
             if(s.val()) Object.values(s.val()).forEach(m => {
-                const cls = m.s === myId ? 'me' : 'o';
-                v.innerHTML += `<div class="msg ${cls}">${m.t}</div>`;
+                v.innerHTML += `<div class="msg ${m.s === myId ? 'me' : 'o'}">${m.t}</div>`;
             });
             v.scrollTop = v.scrollHeight;
         });
+    };
+
+    window.handleSend = () => {
+        const i = document.getElementById('m-in');
+        if(!i.value) return;
+        const rid = [myId, targetId].sort().join("_");
+        push(ref(db, `msgs/${rid}`), {t: i.value, s: myId});
+        i.value = "";
     };
 </script>
 </body>
