@@ -3,47 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>STAR TALK - FIX</title>
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <title>STAR TALK - FRIENDS</title>
     <style>
         :root { --main: #FEE500; --dark: #3C1E1E; --bg: #bacee0; }
-        body { background: var(--main); font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .box { background: white; padding: 35px; border-radius: 15px; width: 90%; max-width: 320px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: var(--dark); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        #err { color: #d32f2f; font-size: 12px; margin-top: 15px; line-height: 1.4; }
+        body { margin: 0; font-family: sans-serif; background: var(--bg); height: 100vh; display: flex; justify-content: center; }
+        #app { width: 100%; max-width: 450px; background: white; display: flex; flex-direction: column; position: relative; }
+        
+        /* 로그인 */
+        .overlay { position: absolute; inset: 0; background: var(--main); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; }
+        .in { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .btn-dark { width: 100%; padding: 12px; background: var(--dark); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+
+        /* 헤더 & 탭 */
+        header { background: var(--dark); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .tabs { display: flex; background: #f9f9f9; border-bottom: 1px solid #ddd; }
+        .tab { flex: 1; padding: 12px; text-align: center; cursor: pointer; font-size: 14px; color: #666; }
+        .tab.active { color: var(--dark); border-bottom: 3px solid var(--dark); font-weight: bold; }
+
+        /* 리스트 & 채팅창 */
+        #list-view, #chat-view { flex: 1; overflow-y: auto; display: none; }
+        .f-item { padding: 15px; border-bottom: 1px solid #eee; display: flex; align-items: center; cursor: pointer; }
+        .f-item:hover { background: #f5f5f5; }
+        .f-icon { width: 40px; height: 40px; background: #eee; border-radius: 15px; margin-right: 12px; display: flex; align-items: center; justify-content: center; }
+
+        #chat-view { background: var(--bg); padding: 15px; flex-direction: column; gap: 10px; }
+        .m-wrap { display: flex; flex-direction: column; max-width: 80%; }
+        .m-box { padding: 8px 12px; border-radius: 10px; font-size: 14px; position: relative; }
+        .me { align-self: flex-end; align-items: flex-end; } .me .m-box { background: var(--main); }
+        .o { align-self: flex-start; } .o .m-box { background: white; }
+
+        /* 하단 입력창 */
+        .input-bar { padding: 10px; display: none; background: white; gap: 5px; }
+        #msg-in { flex: 1; border: 1px solid #ddd; padding: 10px; border-radius: 20px; outline: none; }
     </style>
 </head>
 <body>
 
-<div id="login-ui" class="box">
-    <h2 style="margin-top:0;">STAR TALK</h2>
-    <input type="text" id="myId" placeholder="아이디">
-    <input type="password" id="myPw" placeholder="비밀번호">
-    <button id="loginBtn">로그인 / 시작</button>
-    <div id="err"></div>
-</div>
-
-<div id="main-ui" style="display:none; width:100%; height:100vh; background: var(--bg);">
-    <div style="background:#333; color:white; padding:15px; display:flex; justify-content:space-between; align-items:center;">
-        <b id="user-display"></b>
-        <button onclick="location.reload()" style="background:none; border:1px solid #fff; color:white; padding:5px 10px; border-radius:5px; font-size:11px;">로그아웃</button>
+<div id="app">
+    <div id="login-ui" class="overlay">
+        <h2 style="color:var(--dark);">STAR TALK</h2>
+        <input type="text" id="myId" class="in" placeholder="아이디">
+        <input type="password" id="myPw" class="in" placeholder="비밀번호">
+        <button onclick="login()" class="btn-dark">로그인 / 시작</button>
     </div>
-    <div style="padding:20px; text-align:center;">
-        <div style="background:white; padding:20px; border-radius:10px;">
-            <h3>✅ 연결 성공!</h3>
-            <p>데이터베이스와 정상적으로 연결되었습니다.</p>
-        </div>
+
+    <header>
+        <span id="title">STAR TALK</span>
+        <button onclick="addFriend()" style="background:var(--main); border:none; padding:5px 10px; border-radius:5px; font-size:12px; font-weight:bold; cursor:pointer;">+ 친구추가</button>
+    </header>
+
+    <div class="tabs">
+        <div class="tab active" id="t-list" onclick="showTab('list')">친구목록</div>
+        <div class="tab" id="t-chat" onclick="showTab('chat')">대화창</div>
+    </div>
+
+    <div id="list-view" style="display:block;"></div>
+    <div id="chat-view"></div>
+
+    <div class="input-bar" id="input-area">
+        <input type="text" id="msg-in" placeholder="메시지를 입력하세요" onkeypress="if(event.keyCode==13) send()">
+        <button onclick="send()" style="background:var(--main); border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer;">전송</button>
     </div>
 </div>
 
 <script type="module">
-    // CDN 방식을 사용하여 최신 SDK 로드
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, get, set, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // 유저님이 제공하신 설정값 (불필요한 공백 제거)
-    const firebaseConfig = {
+    const conf = {
         apiKey: "AIzaSyAcBQ_Pyt4kdExDLGyNZJwWGbCdGDzVIjQ",
         authDomain: "starchet-e9630.firebaseapp.com",
         databaseURL: "https://starchet-e9630-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -53,62 +80,109 @@
         appId: "1:532571302538:web:73ad808e560947ea02db73"
     };
 
-    const errDiv = document.getElementById('err');
+    const app = initializeApp(conf);
+    const db = getDatabase(app);
+    let myId = "", targetId = "", chatRoomId = "";
 
-    try {
-        // 1. 파이어베이스 초기화
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+    // 1. 로그인
+    window.login = async () => {
+        myId = document.getElementById('myId').value.trim();
+        const pw = document.getElementById('myPw').value.trim();
+        if(!myId || !pw) return;
 
-        // 2. 로그인 버튼 클릭 핸들러
-        document.getElementById('loginBtn').addEventListener('click', async () => {
-            const id = document.getElementById('myId').value.trim();
-            const pw = document.getElementById('myPw').value.trim();
+        const authRef = ref(db, `auth/${myId}`);
+        const snap = await get(authRef);
 
-            if(!id || !pw) {
-                errDiv.innerText = "⚠️ 아이디와 비밀번호를 입력하세요.";
+        if(!snap.exists()) {
+            await set(authRef, { pw: pw });
+            start();
+        } else if(snap.val().pw === pw) {
+            start();
+        } else {
+            alert("비밀번호가 틀립니다.");
+        }
+    };
+
+    function start() {
+        document.getElementById('login-ui').style.display = 'none';
+        document.getElementById('title').innerText = "ID: " + myId;
+        loadFriends();
+    }
+
+    // 2. 친구 추가
+    window.addFriend = async () => {
+        const fid = prompt("추가할 친구의 아이디를 입력하세요:");
+        if(!fid || fid === myId) return;
+        
+        // 내 친구 목록에 저장
+        await set(ref(db, `users/${myId}/friends/${fid}`), { id: fid });
+        // 상대방 친구 목록에도 나를 저장 (서로 친구)
+        await set(ref(db, `users/${fid}/friends/${myId}`), { id: myId });
+        alert(fid + "님과 친구가 되었습니다!");
+    };
+
+    // 3. 친구 목록 불러오기
+    function loadFriends() {
+        onValue(ref(db, `users/${myId}/friends`), (snap) => {
+            const list = document.getElementById('list-view');
+            list.innerHTML = "";
+            if(!snap.exists()) {
+                list.innerHTML = "<p style='text-align:center; padding:20px; color:gray;'>친구가 없습니다.</p>";
                 return;
             }
+            Object.keys(snap.val()).forEach(fid => {
+                const div = document.createElement('div');
+                div.className = 'f-item';
+                div.innerHTML = `<div class="f-icon">👤</div><b>${fid}</b>`;
+                div.onclick = () => openChat(fid);
+                list.appendChild(div);
+            });
+        });
+    }
 
-            errDiv.style.color = "blue";
-            errDiv.innerText = "서버 확인 중...";
+    // 4. 채팅방 열기
+    function openChat(fid) {
+        targetId = fid;
+        chatRoomId = [myId, fid].sort().join("_"); // 고유 방 ID 생성
+        showTab('chat');
+        document.getElementById('t-chat').innerText = fid + "님과 대화";
 
-            try {
-                const userRef = ref(db, `auth/${id}`);
-                const snap = await get(userRef);
-
-                if(!snap.exists()) {
-                    // 신규 유저 등록
-                    await set(userRef, { pw: pw });
-                    alert("축하합니다! 신규 아이디로 등록되었습니다.");
-                    showMain(id);
-                } else {
-                    // 기존 유저 확인
-                    if(snap.val().pw === pw) {
-                        showMain(id);
-                    } else {
-                        errDiv.style.color = "red";
-                        errDiv.innerText = "❌ 비밀번호가 틀립니다.";
-                    }
-                }
-            } catch (error) {
-                errDiv.style.color = "red";
-                if(error.message.includes("permission_denied")) {
-                    errDiv.innerText = "🔥 파이어베이스 [Rules]에서 read, write를 true로 바꾸고 [게시]를 눌러주세요!";
-                } else {
-                    errDiv.innerText = "연결 에러: " + error.message;
-                }
+        onValue(ref(db, `messages/${chatRoomId}`), (snap) => {
+            const box = document.getElementById('chat-view');
+            box.innerHTML = "";
+            if(snap.exists()) {
+                Object.values(snap.val()).forEach(m => {
+                    const isMe = m.sender === myId;
+                    const wrap = document.createElement('div');
+                    wrap.className = `m-wrap ${isMe ? 'me' : 'o'}`;
+                    wrap.innerHTML = `<div class="m-box">${m.text}</div>`;
+                    box.appendChild(wrap);
+                });
+                box.scrollTop = box.scrollHeight;
             }
         });
-    } catch (e) {
-        errDiv.innerText = "⚠️ 설정값 로드 실패: " + e.message;
     }
 
-    function showMain(id) {
-        document.getElementById('login-ui').style.display = 'none';
-        document.getElementById('main-ui').style.display = 'block';
-        document.getElementById('user-display').innerText = "ID: " + id;
-    }
+    // 5. 메시지 전송
+    window.send = () => {
+        const input = document.getElementById('msg-in');
+        if(!input.value || !chatRoomId) return;
+        push(ref(db, `messages/${chatRoomId}`), {
+            text: input.value,
+            sender: myId,
+            time: Date.now()
+        });
+        input.value = "";
+    };
+
+    // 6. 탭 전환
+    window.showTab = (type) => {
+        document.getElementById('list-view').style.display = type === 'list' ? 'block' : 'none';
+        document.getElementById('chat-view').style.display = type === 'chat' ? 'flex' : 'none';
+        document.getElementById('input-area').style.display = type === 'chat' ? 'flex' : 'none';
+        document.getElementById('t-list').classList.toggle('active', type === 'list');
+        document.getElementById('t-chat').classList.toggle('active', type === 'chat');
+    };
 </script>
 </body>
 </html>
