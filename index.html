@@ -2,70 +2,43 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>STAR TALK - MOBILE FIXED</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>STAR TALK</title>
     <style>
-        :root { --main: #fee500; --bg: #abc1d1; --menu-w: 260px; }
+        :root { --main: #fee500; --bg: #abc1d1; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
-        /* 전체 화면 설정 - 안드로이드 스크롤 방지 */
-        html, body { 
-            margin: 0; padding: 0; width: 100%; height: 100%; 
-            overflow: hidden; position: fixed; 
-        }
+        /* 안드로이드 키보드 대응: 전체 높이 고정 */
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; position: fixed; }
 
         /* [로그인 UI] */
-        #login-ui { 
-            position: fixed; inset: 0; background: #fff; z-index: 5000; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; 
-        }
-        .login-input { width: 100%; max-width: 300px; height: 50px; margin-bottom: 10px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+        #login-ui { position: fixed; inset: 0; background: #fff; z-index: 5000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        .login-input { width: 100%; max-width: 300px; height: 50px; margin-bottom: 10px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
         .btn-login { width: 100%; max-width: 300px; height: 50px; background: #000; color: #fff; border: none; border-radius: 8px; font-weight: bold; }
 
-        /* [메인 앱 레이아웃] */
-        #main-app { 
-            display: none; flex-direction: column; width: 100%; height: 100%; background: var(--bg);
-        }
+        /* [메인 화면 구조] */
+        #main-app { display: none; flex-direction: column; width: 100%; height: 100%; background: var(--bg); }
 
-        /* 상단 헤더 */
-        header { 
-            height: 55px; min-height: 55px; background: #fff; border-bottom: 1px solid #eee;
-            display: flex; align-items: center; justify-content: space-between; padding: 0 15px; z-index: 100;
-        }
+        header { height: 55px; background: #fff; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; flex-shrink: 0; }
+        
+        #chat-view { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
 
-        /* 채팅 구역 - 입력창 제외한 나머지 다 채우기 */
-        #chat-view { 
-            flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px;
-            -webkit-overflow-scrolling: touch; 
-        }
-
-        /* 하단 입력바 - 안드로이드 키보드 대응 핵심 */
+        /* 하단 입력창: 절대 숨기지 않고 항상 표시 */
         footer { 
-            background: #fff; padding: 8px 10px; 
-            display: flex; align-items: center; gap: 8px;
-            border-top: 1px solid #ddd;
-            padding-bottom: calc(8px + env(safe-area-inset-bottom));
+            height: 60px; background: #fff; border-top: 1px solid #ddd; 
+            display: flex; align-items: center; gap: 8px; padding: 0 10px;
+            padding-bottom: env(safe-area-inset-bottom); flex-shrink: 0;
         }
-        #m-in { 
-            flex: 1; height: 42px; background: #f0f0f0; border: none; 
-            border-radius: 21px; padding: 0 15px; font-size: 16px; outline: none;
-        }
-        .send-btn { 
-            width: 50px; height: 42px; color: #333; font-weight: bold; 
-            background: none; border: none; font-size: 15px; flex-shrink: 0;
-        }
+        #m-in { flex: 1; height: 40px; background: #f0f0f0; border: none; border-radius: 20px; padding: 0 15px; font-size: 16px; outline: none; }
+        .send-btn { width: 55px; height: 40px; background: var(--main); border: none; border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer; }
 
         /* 말풍선 */
-        .msg { padding: 10px 14px; border-radius: 12px; max-width: 80%; font-size: 15px; line-height: 1.4; word-break: break-all; }
-        .me { align-self: flex-end; background: var(--main); }
-        .o { align-self: flex-start; background: #fff; }
+        .msg { padding: 10px 14px; border-radius: 12px; max-width: 80%; font-size: 15px; word-break: break-all; }
+        .me { align-self: flex-end; background: var(--main); border-top-right-radius: 2px; }
+        .o { align-self: flex-start; background: #fff; border-top-left-radius: 2px; }
 
         /* 사이드 메뉴 */
-        #side-menu {
-            position: fixed; top: 0; left: calc(var(--menu-w) * -1); 
-            width: var(--menu-w); height: 100%; background: #fff; z-index: 4000;
-            transition: 0.3s; box-shadow: 5px 0 15px rgba(0,0,0,0.2);
-        }
+        #side-menu { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background: #fff; z-index: 4000; transition: 0.3s; box-shadow: 5px 0 15px rgba(0,0,0,0.2); }
         #side-menu.open { left: 0; }
         #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 3500; display: none; }
     </style>
@@ -82,8 +55,8 @@
     <div id="overlay" onclick="window.toggleMenu()"></div>
 
     <nav id="side-menu">
-        <div style="padding:20px; border-bottom:1px solid #eee; font-weight:bold; display:flex; justify-content:space-between;">
-            친구 목록 <button onclick="window.handleAddFriend()">+</button>
+        <div style="padding:20px; border-bottom:1px solid #eee; font-weight:bold; display:flex; justify-content:space-between; align-items:center;">
+            친구 목록 <button onclick="window.handleAddFriend()" style="padding:5px 10px; border-radius:5px; border:1px solid #ddd; background:#fff;">+ 추가</button>
         </div>
         <div id="friend-list" style="padding:10px;"></div>
     </nav>
@@ -91,11 +64,15 @@
     <main id="main-app">
         <header>
             <button onclick="window.toggleMenu()" style="background:none; border:none; font-size:24px;">≡</button>
-            <b id="target-title" style="font-size:16px;">상대를 선택하세요</b>
+            <b id="target-title">친구를 선택하세요</b>
             <div style="width:24px;"></div>
         </header>
 
-        <div id="chat-view"></div>
+        <div id="chat-view">
+            <div style="text-align:center; color:#555; font-size:13px; margin-top:50px;">
+                왼쪽 메뉴(≡)를 눌러 대화할 친구를 선택해 주세요!
+            </div>
+        </div>
 
         <footer>
             <input type="text" id="m-in" placeholder="메시지 입력..." onkeypress="if(event.keyCode==13) window.handleSend()">
@@ -138,7 +115,7 @@
             document.getElementById('login-ui').style.display = 'none';
             document.getElementById('main-app').style.display = 'flex';
             loadFriends();
-            window.toggleMenu(); // 로그인하자마자 친구 고르라고 메뉴 열어줌
+            window.toggleMenu(); // 처음엔 친구를 골라야 하니 메뉴를 열어줌
         } else alert("비밀번호 틀림");
     };
 
@@ -149,8 +126,8 @@
             if(snap.val()) {
                 Object.keys(snap.val()).forEach(fid => {
                     const item = document.createElement('div');
-                    item.style = "padding:15px; border-bottom:1px solid #eee; cursor:pointer;";
-                    item.innerHTML = `👤 <b>${fid}</b>`;
+                    item.style = "padding:15px; border-bottom:1px solid #f0f0f0; cursor:pointer; font-weight:bold;";
+                    item.innerHTML = `👤 ${fid}`;
                     item.onclick = () => { window.openChat(fid); window.toggleMenu(); };
                     list.appendChild(item);
                 });
@@ -159,7 +136,7 @@
     }
 
     window.handleAddFriend = async () => {
-        const fid = prompt("친구 ID:").toLowerCase().trim();
+        const fid = prompt("추가할 친구 ID:").toLowerCase().trim();
         if(fid && fid !== myId) {
             const check = await get(ref(db, `auth/${fid}`));
             if(check.exists()) await set(ref(db, `users/${myId}/f/${fid}`), {id: fid});
@@ -188,7 +165,9 @@
 
     window.handleSend = () => {
         const i = document.getElementById('m-in');
-        if(!i.value.trim() || !targetId) return;
+        if(!i.value.trim()) return;
+        if(!targetId) return alert("왼쪽 메뉴(≡)에서 대화할 친구를 먼저 선택해주세요!");
+
         const rid = [myId, targetId].sort().join("_");
         push(ref(db, `msgs/${rid}`), { t: i.value, s: myId, ts: serverTimestamp() });
         i.value = "";
