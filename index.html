@@ -3,44 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>STAR TALK</title>
+    <title>STAR TALK - CALL</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        :root { --main: #fee500; --bg: #abc1d1; }
+        :root { --main: #fee500; --bg: #abc1d1; --call: #4cd964; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        
-        /* 안드로이드 키보드 대응: 전체 높이 고정 */
-        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; position: fixed; }
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; position: fixed; font-family: sans-serif; }
 
         /* [로그인 UI] */
         #login-ui { position: fixed; inset: 0; background: #fff; z-index: 5000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-        .login-input { width: 100%; max-width: 300px; height: 50px; margin-bottom: 10px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
-        .btn-login { width: 100%; max-width: 300px; height: 50px; background: #000; color: #fff; border: none; border-radius: 8px; font-weight: bold; }
+        .login-input { width: 100%; max-width: 300px; height: 50px; margin-bottom: 10px; padding: 15px; border: 1px solid #ddd; border-radius: 10px; }
+        .btn-login { width: 100%; max-width: 300px; height: 50px; background: #000; color: #fff; border: none; border-radius: 10px; font-weight: bold; }
 
-        /* [메인 화면 구조] */
+        /* [메인 구조] */
         #main-app { display: none; flex-direction: column; width: 100%; height: 100%; background: var(--bg); }
-
         header { height: 55px; background: #fff; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; flex-shrink: 0; }
-        
         #chat-view { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
 
-        /* 하단 입력창: 절대 숨기지 않고 항상 표시 */
-        footer { 
-            height: 60px; background: #fff; border-top: 1px solid #ddd; 
-            display: flex; align-items: center; gap: 8px; padding: 0 10px;
-            padding-bottom: env(safe-area-inset-bottom); flex-shrink: 0;
-        }
+        /* [하단 입력창] */
+        footer { height: 60px; background: #fff; border-top: 1px solid #ddd; display: flex; align-items: center; gap: 8px; padding: 0 10px; padding-bottom: env(safe-area-inset-bottom); flex-shrink: 0; }
         #m-in { flex: 1; height: 40px; background: #f0f0f0; border: none; border-radius: 20px; padding: 0 15px; font-size: 16px; outline: none; }
-        .send-btn { width: 55px; height: 40px; background: var(--main); border: none; border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer; }
+        .send-btn { width: 55px; height: 40px; background: var(--main); border: none; border-radius: 10px; font-weight: bold; }
 
-        /* 말풍선 */
-        .msg { padding: 10px 14px; border-radius: 12px; max-width: 80%; font-size: 15px; word-break: break-all; }
-        .me { align-self: flex-end; background: var(--main); border-top-right-radius: 2px; }
-        .o { align-self: flex-start; background: #fff; border-top-left-radius: 2px; }
+        /* [통화 알림/화면] */
+        #call-ui { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); 
+            z-index: 6000; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; 
+        }
+        .call-btn-group { display: flex; gap: 20px; margin-top: 30px; }
+        .btn-call-end { background: #ff3b30; color: white; border: none; padding: 15px 30px; border-radius: 30px; font-weight: bold; }
 
         /* 사이드 메뉴 */
         #side-menu { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background: #fff; z-index: 4000; transition: 0.3s; box-shadow: 5px 0 15px rgba(0,0,0,0.2); }
         #side-menu.open { left: 0; }
         #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 3500; display: none; }
+        
+        /* 메시지 */
+        .msg { padding: 10px 14px; border-radius: 12px; max-width: 80%; font-size: 15px; word-break: break-all; }
+        .me { align-self: flex-end; background: var(--main); }
+        .o { align-self: flex-start; background: #fff; }
     </style>
 </head>
 <body>
@@ -52,11 +53,19 @@
         <button class="btn-login" onclick="window.handleLogin()">로그인</button>
     </div>
 
+    <div id="call-ui">
+        <div style="font-size: 24px; margin-bottom: 10px;" id="call-status">전화 연결 중...</div>
+        <div id="call-target-name" style="font-size: 18px; color: #ccc;">상대방</div>
+        <div class="call-btn-group">
+            <button class="btn-call-end" onclick="location.reload()">통화 종료</button>
+        </div>
+    </div>
+
     <div id="overlay" onclick="window.toggleMenu()"></div>
 
     <nav id="side-menu">
         <div style="padding:20px; border-bottom:1px solid #eee; font-weight:bold; display:flex; justify-content:space-between; align-items:center;">
-            친구 목록 <button onclick="window.handleAddFriend()" style="padding:5px 10px; border-radius:5px; border:1px solid #ddd; background:#fff;">+ 추가</button>
+            친구 목록 <button onclick="window.handleAddFriend()">+ 추가</button>
         </div>
         <div id="friend-list" style="padding:10px;"></div>
     </nav>
@@ -64,16 +73,10 @@
     <main id="main-app">
         <header>
             <button onclick="window.toggleMenu()" style="background:none; border:none; font-size:24px;">≡</button>
-            <b id="target-title">친구를 선택하세요</b>
-            <div style="width:24px;"></div>
+            <b id="target-title">상대를 선택하세요</b>
+            <button id="btn-call" onclick="window.makeCall()" style="background:none; border:none; font-size:22px; display:none;">📞</button>
         </header>
-
-        <div id="chat-view">
-            <div style="text-align:center; color:#555; font-size:13px; margin-top:50px;">
-                왼쪽 메뉴(≡)를 눌러 대화할 친구를 선택해 주세요!
-            </div>
-        </div>
-
+        <div id="chat-view"></div>
         <footer>
             <input type="text" id="m-in" placeholder="메시지 입력..." onkeypress="if(event.keyCode==13) window.handleSend()">
             <button class="send-btn" onclick="window.handleSend()">전송</button>
@@ -94,84 +97,114 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    let myId, targetId;
+    let myId, targetId, peer, myStream;
 
     window.toggleMenu = () => {
-        const menu = document.getElementById('side-menu');
+        document.getElementById('side-menu').classList.toggle('open');
         const overlay = document.getElementById('overlay');
-        const isOpen = menu.classList.toggle('open');
-        overlay.style.display = isOpen ? 'block' : 'none';
+        overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
     };
 
     window.handleLogin = async () => {
         const id = document.getElementById('myId').value.trim().toLowerCase();
         const pw = document.getElementById('myPw').value.trim();
         if(!id || !pw) return;
-
         const snap = await get(ref(db, `auth/${id}`));
         if(!snap.exists() || snap.val().pw === pw) {
             if(!snap.exists()) await set(ref(db, `auth/${id}`), {pw});
             myId = id;
             document.getElementById('login-ui').style.display = 'none';
             document.getElementById('main-app').style.display = 'flex';
-            loadFriends();
-            window.toggleMenu(); // 처음엔 친구를 골라야 하니 메뉴를 열어줌
-        } else alert("비밀번호 틀림");
+            initPeer(); loadFriends(); window.toggleMenu();
+        } else alert("로그인 정보가 틀립니다.");
     };
 
-    function loadFriends() {
-        onValue(ref(db, `users/${myId}/f`), snap => {
-            const list = document.getElementById('friend-list');
-            list.innerHTML = "";
-            if(snap.val()) {
-                Object.keys(snap.val()).forEach(fid => {
-                    const item = document.createElement('div');
-                    item.style = "padding:15px; border-bottom:1px solid #f0f0f0; cursor:pointer; font-weight:bold;";
-                    item.innerHTML = `👤 ${fid}`;
-                    item.onclick = () => { window.openChat(fid); window.toggleMenu(); };
-                    list.appendChild(item);
+    function initPeer() {
+        peer = new Peer(myId);
+        peer.on('call', async (call) => {
+            if(confirm(call.peer + "님에게 전화가 왔습니다. 받으시겠습니까?")) {
+                myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                call.answer(myStream);
+                showCallUI(call.peer, "통화 중");
+                call.on('stream', (remoteStream) => {
+                    const audio = new Audio();
+                    audio.srcObject = remoteStream;
+                    audio.play();
                 });
             }
         });
     }
 
-    window.handleAddFriend = async () => {
-        const fid = prompt("추가할 친구 ID:").toLowerCase().trim();
-        if(fid && fid !== myId) {
-            const check = await get(ref(db, `auth/${fid}`));
-            if(check.exists()) await set(ref(db, `users/${myId}/f/${fid}`), {id: fid});
-            else alert("없는 유저");
+    window.makeCall = async () => {
+        if(!targetId) return;
+        showCallUI(targetId, "연결 대기 중...");
+        try {
+            myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const call = peer.call(targetId, myStream);
+            call.on('stream', (remoteStream) => {
+                document.getElementById('call-status').innerText = "통화 중";
+                const audio = new Audio();
+                audio.srcObject = remoteStream;
+                audio.play();
+            });
+        } catch (e) {
+            alert("마이크 권한이 필요합니다.");
+            location.reload();
         }
     };
+
+    function showCallUI(name, status) {
+        document.getElementById('call-ui').style.display = 'flex';
+        document.getElementById('call-target-name').innerText = name;
+        document.getElementById('call-status').innerText = status;
+    }
+
+    function loadFriends() {
+        onValue(ref(db, `users/${myId}/f`), snap => {
+            const list = document.getElementById('friend-list');
+            list.innerHTML = "";
+            if(snap.val()) Object.keys(snap.val()).forEach(fid => {
+                const item = document.createElement('div');
+                item.style = "padding:15px; border-bottom:1px solid #f0f0f0; font-weight:bold;";
+                item.innerHTML = `👤 ${fid}`;
+                item.onclick = () => { window.openChat(fid); window.toggleMenu(); };
+                list.appendChild(item);
+            });
+        });
+    }
 
     window.openChat = (fid) => {
         targetId = fid;
         document.getElementById('target-title').innerText = fid;
+        document.getElementById('btn-call').style.display = 'block';
         const rid = [myId, fid].sort().join("_");
         onValue(ref(db, `msgs/${rid}`), s => {
-            const v = document.getElementById('chat-view');
-            v.innerHTML = "";
-            if(s.val()) {
-                Object.values(s.val()).forEach(m => {
-                    const div = document.createElement('div');
-                    div.className = `msg ${m.s === myId ? 'me' : 'o'}`;
-                    div.innerText = m.t;
-                    v.appendChild(div);
-                });
-                v.scrollTop = v.scrollHeight;
-            }
+            const v = document.getElementById('chat-view'); v.innerHTML = "";
+            if(s.val()) Object.values(s.val()).forEach(m => {
+                const div = document.createElement('div');
+                div.className = `msg ${m.s === myId ? 'me' : 'o'}`;
+                div.innerText = m.t;
+                v.appendChild(div);
+            });
+            v.scrollTop = v.scrollHeight;
         });
     };
 
     window.handleSend = () => {
         const i = document.getElementById('m-in');
-        if(!i.value.trim()) return;
-        if(!targetId) return alert("왼쪽 메뉴(≡)에서 대화할 친구를 먼저 선택해주세요!");
-
+        if(!i.value.trim() || !targetId) return;
         const rid = [myId, targetId].sort().join("_");
         push(ref(db, `msgs/${rid}`), { t: i.value, s: myId, ts: serverTimestamp() });
         i.value = "";
-        i.focus();
+    };
+
+    window.handleAddFriend = async () => {
+        const fid = prompt("친구 ID:").toLowerCase().trim();
+        if(fid && fid !== myId) {
+            const check = await get(ref(db, `auth/${fid}`));
+            if(check.exists()) await set(ref(db, `users/${myId}/f/${fid}`), {id: fid});
+            else alert("없는 사용자");
+        }
     };
 </script>
 </body>
