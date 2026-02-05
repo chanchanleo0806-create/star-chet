@@ -2,94 +2,186 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>STAR TALK - SERVICE GUIDE</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>STAR TALK MOBILE</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        :root { --blue: #2189ff; --gray: #757575; --line: #eeeeee; }
-        body { margin: 0; font-family: 'SamsungOne', 'Malgun Gothic', sans-serif; background: #fff; color: #333; }
+        :root { --blue: #2189ff; --bg: #f4f4f7; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; font-family: -apple-system, sans-serif; background: #fff; height: 100vh; overflow: hidden; }
 
-        /* 가이드 컨테이너 */
-        .guide-container { padding: 20px; max-width: 500px; margin: 0 auto; }
-        .guide-header { border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 25px; }
-        .guide-header h1 { font-size: 22px; margin: 0; letter-spacing: -1px; }
+        /* [1. 로그인 화면] */
+        #login-ui { 
+            position: fixed; inset: 0; background: #fff; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; z-index: 2000;
+        }
+        .login-logo { font-size: 32px; font-weight: 800; color: #000; margin-bottom: 40px; letter-spacing: -1px; }
+        .input-group { width: 100%; max-width: 320px; }
+        input { 
+            width: 100%; height: 55px; padding: 0 15px; margin-bottom: 10px; 
+            border: 1px solid #ddd; border-radius: 12px; font-size: 16px; outline: none; background: #f9f9f9;
+        }
+        input:focus { border-color: var(--blue); background: #fff; }
+        .btn-main { 
+            width: 100%; height: 55px; background: #000; color: #fff; 
+            border: none; border-radius: 12px; font-weight: bold; font-size: 17px; cursor: pointer; margin-top: 10px;
+        }
 
-        /* 단계별 리스트 (삼성 서비스 스타일) */
-        .step-item { display: flex; align-items: flex-start; padding: 20px 0; border-bottom: 1px solid var(--line); }
-        .step-icon { width: 60px; height: 60px; flex-shrink: 0; background: #f8f9fb; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 30px; margin-right: 15px; }
-        .step-content { flex: 1; }
-        .step-num { font-size: 13px; font-weight: bold; color: var(--blue); margin-bottom: 4px; display: block; }
-        .step-text { font-size: 15px; font-weight: 500; line-height: 1.4; margin-bottom: 8px; }
-        .step-desc { font-size: 13px; color: var(--gray); line-height: 1.5; }
-
-        /* 입력창 및 버튼 */
-        .input-group { margin-top: 15px; }
-        .input-group input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 8px; font-size: 14px; box-sizing: border-box; }
-        .btn-confirm { width: 100%; padding: 15px; background: #000; color: #fff; border: none; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 10px; }
+        /* [2. 메인 채팅 화면] */
+        #main-app { display: none; flex-direction: column; height: 100vh; background: #fff; }
         
-        /* 채팅 화면 전환 */
-        #main-app { display: none; }
+        /* 상단바 */
+        header { 
+            height: 60px; padding: 0 15px; border-bottom: 1px solid #eee; 
+            display: flex; align-items: center; justify-content: space-between; font-weight: bold;
+        }
+        .header-title { font-size: 18px; }
+
+        /* 채팅 구역 */
+        #chat-view { flex: 1; overflow-y: auto; background: #f0f0f2; padding: 15px; display: flex; flex-direction: column; gap: 8px; }
+        .msg { padding: 12px 16px; border-radius: 18px; max-width: 80%; font-size: 15px; line-height: 1.4; position: relative; }
+        .me { align-self: flex-end; background: #fee500; color: #000; border-bottom-right-radius: 2px; }
+        .o { align-self: flex-start; background: #fff; border-bottom-left-radius: 2px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+
+        /* 하단 입력바 */
+        footer { 
+            padding: 10px 15px; border-top: 1px solid #eee; background: #fff;
+            display: flex; align-items: center; gap: 10px; padding-bottom: calc(10px + env(safe-area-inset-bottom));
+        }
+        #m-in { flex: 1; height: 44px; background: #f2f2f4; border: none; border-radius: 22px; padding: 0 15px; font-size: 16px; }
+        .send-btn { color: var(--blue); font-weight: bold; font-size: 16px; border: none; background: none; }
+        
+        /* 통화 화면 */
+        #call-screen { 
+            position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 3000; 
+            display: none; flex-direction: column; align-items: center; justify-content: center; color: #fff;
+        }
     </style>
 </head>
 <body>
 
-<div id="login-ui" class="guide-container">
-    <div class="guide-header">
-        <h1>서비스 이용 안내</h1>
+    <div id="login-ui">
+        <div class="login-logo">STAR TALK</div>
+        <div class="input-group">
+            <input type="text" id="myId" placeholder="아이디" inputmode="email">
+            <input type="password" id="myPw" placeholder="비밀번호">
+            <button class="btn-main" onclick="window.handleLogin()">로그인 후 시작</button>
+        </div>
     </div>
 
-    <div class="step-item">
-        <div class="step-icon">👤</div>
-        <div class="step-content">
-            <span class="step-num">Step 1</span>
-            <div class="step-text">계정 정보를 입력해 주세요.</div>
-            <div class="step-desc">본인 확인을 위한 아이디와 비밀번호가 필요합니다.</div>
-            <div class="input-group">
-                <input type="text" id="myId" placeholder="아이디 입력" inputmode="email">
-                <input type="password" id="myPw" placeholder="비밀번호 입력">
+    <main id="main-app">
+        <header>
+            <div class="header-title" id="chat-target">STAR TALK</div>
+            <div style="display: flex; gap: 12px;">
+                <button onclick="window.makeCall()" style="background:none; border:none; font-size:20px;">📞</button>
+                <button onclick="window.handleAddFriend()" style="background:none; border:none; font-size:20px;">➕</button>
             </div>
+        </header>
+
+        <div id="chat-view">
+            <div style="text-align:center; color:#999; font-size:12px; margin-top:50px;">친구를 선택하여 대화를 시작하세요.</div>
         </div>
+
+        <footer>
+            <button onclick="document.getElementById('file-in').click()" style="background:none; border:none; font-size:22px;">📎</button>
+            <input type="file" id="file-in" style="display:none;" onchange="window.handleFile(this)">
+            <input type="text" id="m-in" placeholder="메시지 입력..." onkeypress="if(event.keyCode==13) window.handleSend()">
+            <button class="send-btn" onclick="window.handleSend()">전송</button>
+        </footer>
+    </main>
+
+    <div id="call-screen">
+        <div style="width:80px; height:80px; background:#333; border-radius:30px; margin-bottom:20px;"></div>
+        <h2 id="call-name">연결 중...</h2>
+        <button onclick="location.reload()" style="margin-top:40px; background:#ff3b30; color:white; border:none; padding:15px 40px; border-radius:30px; font-weight:bold;">종료</button>
     </div>
 
-    <div class="step-item">
-        <div class="step-icon">🔔</div>
-        <div class="step-content">
-            <span class="step-num">Step 2</span>
-            <div class="step-text">알림 및 권한을 허용해 주세요.</div>
-            <div class="step-desc">메시지 수신 시 상단 알림창에 내용이 표시됩니다.</div>
-        </div>
-    </div>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, set, get, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    <div class="step-item">
-        <div class="step-icon">💬</div>
-        <div class="step-content">
-            <span class="step-num">Step 3</span>
-            <div class="step-text">친구 추가 후 대화를 시작하세요.</div>
-            <div class="step-desc">상대방의 아이디를 등록하면 실시간 채팅과 통화가 가능합니다.</div>
-        </div>
-    </div>
+    const firebaseConfig = {
+        apiKey: "AIzaSyAcBQ_Pyt4kdExDLGyNZJwWGbCdGDzVIjQ",
+        authDomain: "starchet-e9630.firebaseapp.com",
+        databaseURL: "https://starchet-e9630-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "starchet-e9630",
+        appId: "1:532571302538:web:73ad808e560947ea02db73"
+    };
 
-    <button class="btn-confirm" onclick="window.handleLogin()">로그인 및 시작하기</button>
-</div>
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    let myId, targetId, peer;
 
-<div id="main-app">
-    <p style="padding:20px;">로그인 성공! 채팅 화면으로 전환되었습니다.</p>
-</div>
-
-<script>
-    window.handleLogin = () => {
-        const id = document.getElementById('myId').value.trim();
+    window.handleLogin = async () => {
+        const id = document.getElementById('myId').value.trim().toLowerCase();
         const pw = document.getElementById('myPw').value.trim();
-        
-        if(!id || !pw) {
-            alert("정보를 모두 입력해주세요.");
-            return;
-        }
-        
-        // 화면 전환 연출
-        document.getElementById('login-ui').style.display = 'none';
-        document.getElementById('main-app').style.display = 'block';
-    }
-</script>
+        if(!id || !pw) return;
 
+        const snap = await get(ref(db, `auth/${id}`));
+        if(!snap.exists() || snap.val().pw === pw) {
+            if(!snap.exists()) await set(ref(db, `auth/${id}`), {pw, nick: id});
+            myId = id; startApp();
+        } else alert("정보 불일치");
+    };
+
+    function startApp() {
+        document.getElementById('login-ui').style.display = 'none';
+        document.getElementById('main-app').style.display = 'flex';
+        
+        peer = new Peer(myId, { config: {'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }]} });
+        
+        peer.on('call', async (call) => {
+            if(confirm(call.peer + "님의 전화?")) {
+                document.getElementById('call-screen').style.display = 'flex';
+                document.getElementById('call-name').innerText = call.peer;
+                const s = await navigator.mediaDevices.getUserMedia({audio:true});
+                call.answer(s);
+                call.on('stream', rs => { const a = new Audio(); a.srcObject = rs; a.play(); });
+            }
+        });
+    }
+
+    window.handleSend = () => {
+        const i = document.getElementById('m-in');
+        if(!i.value || !targetId) return;
+        const rid = [myId, targetId].sort().join("_");
+        push(ref(db, `msgs/${rid}`), {t: i.value, s: myId});
+        i.value = "";
+    };
+
+    window.handleAddFriend = async () => {
+        const fid = prompt("친구 ID:").toLowerCase().trim();
+        if(fid && fid !== myId) {
+            const check = await get(ref(db, `auth/${fid}`));
+            if(check.exists()) {
+                await set(ref(db, `users/${myId}/f/${fid}`), {id: fid});
+                window.openChat(fid);
+            } else alert("없는 유저");
+        }
+    };
+
+    window.openChat = (fid) => {
+        targetId = fid;
+        document.getElementById('chat-target').innerText = fid;
+        const rid = [myId, fid].sort().join("_");
+        onValue(ref(db, `msgs/${rid}`), s => {
+            const v = document.getElementById('chat-view'); v.innerHTML = "";
+            if(s.val()) Object.values(s.val()).forEach(m => {
+                const cls = m.s === myId ? 'me' : 'o';
+                v.innerHTML += `<div class="msg ${cls}">${m.t}</div>`;
+            });
+            v.scrollTop = v.scrollHeight;
+        });
+    };
+
+    window.makeCall = async () => {
+        if(!targetId) return;
+        document.getElementById('call-screen').style.display = 'flex';
+        document.getElementById('call-name').innerText = targetId;
+        const s = await navigator.mediaDevices.getUserMedia({audio:true});
+        const call = peer.call(targetId, s);
+        call.on('stream', rs => { const a = new Audio(); a.srcObject = rs; a.play(); });
+    };
+</script>
 </body>
 </html>
