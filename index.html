@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>STAR TALK - AUTO LOGIN</title>
+    <title>STAR TALK - AUTO LOGIN FIXED</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root { --main: #fee500; --bg: #abc1d1; }
@@ -12,28 +12,28 @@
 
         /* [로그인 UI] */
         #login-ui { position: fixed; inset: 0; background: #fff; z-index: 5000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-        .login-input { width: 100%; max-width: 300px; height: 50px; margin-bottom: 10px; padding: 15px; border: 1px solid #ddd; border-radius: 10px; }
-        .btn-login { width: 100%; max-width: 300px; height: 50px; background: #000; color: #fff; border: none; border-radius: 10px; font-weight: bold; }
+        .login-input { width: 100%; max-width: 300px; height: 50px; margin-bottom: 10px; padding: 15px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; }
+        .btn-login { width: 100%; max-width: 300px; height: 50px; background: #000; color: #fff; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
 
-        /* [메인 앱] */
+        /* [메인 화면] */
         #main-app { display: none; flex-direction: column; height: 100%; background: var(--bg); }
         header { height: 60px; background: #fff; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; flex-shrink: 0; }
         #chat-view { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
 
-        /* [하단 입력창] */
+        /* 하단 입력창 */
         footer { height: 70px; background: #fff; border-top: 1px solid #ddd; display: flex; align-items: center; gap: 8px; padding: 0 10px; flex-shrink: 0; }
         #m-in { flex: 1; height: 45px; background: #f0f0f0; border-radius: 22px; padding: 0 15px; border: 1px solid #ddd; outline: none; }
         .send-btn { width: 60px; height: 45px; background: var(--main); border: none; border-radius: 10px; font-weight: bold; }
-
-        /* 말풍선 */
-        .msg { padding: 10px 14px; border-radius: 12px; max-width: 80%; font-size: 15px; word-break: break-all; }
-        .me { align-self: flex-end; background: var(--main); }
-        .o { align-self: flex-start; background: #fff; }
 
         /* 사이드 메뉴 */
         #side-menu { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background: #fff; z-index: 4000; transition: 0.3s; }
         #side-menu.open { left: 0; }
         #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 3500; display: none; }
+
+        /* 말풍선 */
+        .msg { padding: 10px 14px; border-radius: 12px; max-width: 80%; font-size: 15px; word-break: break-all; }
+        .me { align-self: flex-end; background: var(--main); }
+        .o { align-self: flex-start; background: #fff; }
     </style>
 </head>
 <body>
@@ -43,14 +43,14 @@
         <input type="text" id="myId" class="login-input" placeholder="아이디">
         <input type="password" id="myPw" class="login-input" placeholder="비밀번호">
         <button class="btn-login" onclick="window.handleLogin()">로그인</button>
-        <p style="font-size:12px; color:#888; margin-top:15px;">한 번 로그인하면 정보를 기억합니다.</p>
+        <p id="auto-status" style="font-size:12px; color:#999; margin-top:15px;">자동 로그인 정보를 확인하는 중...</p>
     </div>
 
     <div id="overlay" onclick="window.toggleMenu()"></div>
 
     <nav id="side-menu">
-        <div style="padding:20px; border-bottom:1px solid #eee; font-weight:bold; display:flex; justify-content:space-between; align-items:center;">
-            내 친구 <button onclick="window.handleAddFriend()">+</button>
+        <div style="padding:20px; border-bottom:1px solid #eee; font-weight:bold; display:flex; justify-content:space-between;">
+            친구 목록 <button onclick="window.handleAddFriend()">+</button>
         </div>
         <div id="friend-list" style="padding:10px;"></div>
         <button onclick="window.handleLogout()" style="width:100%; padding:15px; border:none; background:#f5f5f5; color:red; margin-top:auto;">로그아웃</button>
@@ -60,7 +60,7 @@
         <header>
             <button onclick="window.toggleMenu()" style="background:none; border:none; font-size:24px;">≡</button>
             <b id="target-title">채팅</b>
-            <button id="btn-call" onclick="window.makeCall()" style="background:none; border:none; font-size:22px; display:none;">📞</button>
+            <div style="width:24px;"></div>
         </header>
         <div id="chat-view"></div>
         <footer>
@@ -85,45 +85,67 @@
     const db = getDatabase(app);
     let myId, targetId;
 
-    // [핵심] 자동 로그인 체크
-    window.onload = () => {
-        const savedId = localStorage.getItem('starTalk_id');
-        const savedPw = localStorage.getItem('starTalk_pw');
-        if (savedId && savedPw) {
-            document.getElementById('myId').value = savedId;
-            document.getElementById('myPw').value = savedPw;
-            window.handleLogin(true); // 자동 로그인 실행
-        }
-    };
-
+    // 메뉴 토글
     window.toggleMenu = () => {
-        document.getElementById('side-menu').classList.toggle('open');
-        document.getElementById('overlay').style.display = document.getElementById('side-menu').classList.contains('open') ? 'block' : 'none';
+        const menu = document.getElementById('side-menu');
+        const overlay = document.getElementById('overlay');
+        const isOpen = menu.classList.toggle('open');
+        overlay.style.display = isOpen ? 'block' : 'none';
     };
 
+    // [중요] 로그인 함수 보강
     window.handleLogin = async (isAuto = false) => {
-        const id = document.getElementById('myId').value.trim().toLowerCase();
-        const pw = document.getElementById('myPw').value.trim();
-        if(!id || !pw) return;
+        const idIn = document.getElementById('myId');
+        const pwIn = document.getElementById('myPw');
+        const id = idIn.value.trim().toLowerCase();
+        const pw = pwIn.value.trim();
 
-        const snap = await get(ref(db, `auth/${id}`));
-        if(!snap.exists() || snap.val().pw === pw) {
-            if(!snap.exists()) await set(ref(db, `auth/${id}`), {pw});
+        if(!id || !pw) {
+            document.getElementById('auto-status').innerText = "아이디를 입력해주세요.";
+            return;
+        }
+
+        try {
+            const snap = await get(ref(db, `auth/${id}`));
             
-            myId = id;
-            // 정보 저장
-            localStorage.setItem('starTalk_id', id);
-            localStorage.setItem('starTalk_pw', pw);
+            // 로그인 성공 조건
+            if(!snap.exists() || snap.val().pw === pw) {
+                if(!snap.exists()) await set(ref(db, `auth/${id}`), {pw});
+                
+                myId = id;
+                // 성공 시 브라우저에 확실히 저장
+                localStorage.setItem('st_id', id);
+                localStorage.setItem('st_pw', pw);
 
-            document.getElementById('login-ui').style.display = 'none';
-            document.getElementById('main-app').style.display = 'flex';
-            loadFriends();
-            if(!isAuto) window.toggleMenu();
-        } else {
-            alert("로그인 정보가 틀립니다.");
-            localStorage.clear();
+                document.getElementById('login-ui').style.display = 'none';
+                document.getElementById('main-app').style.display = 'flex';
+                loadFriends();
+            } else {
+                if(isAuto) {
+                    localStorage.removeItem('st_id');
+                    localStorage.removeItem('st_pw');
+                }
+                alert("비밀번호가 틀립니다.");
+            }
+        } catch (e) {
+            console.error(e);
         }
     };
+
+    // [핵심] 페이지 로드 시 자동 로그인 실행
+    window.addEventListener('load', () => {
+        const sid = localStorage.getItem('st_id');
+        const spw = localStorage.getItem('st_pw');
+        
+        if (sid && spw) {
+            document.getElementById('myId').value = sid;
+            document.getElementById('myPw').value = spw;
+            document.getElementById('auto-status').innerText = "자동 로그인 중...";
+            window.handleLogin(true);
+        } else {
+            document.getElementById('auto-status').innerText = "환영합니다!";
+        }
+    });
 
     window.handleLogout = () => {
         if(confirm("로그아웃 하시겠습니까?")) {
