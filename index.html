@@ -3,47 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>STAR TALK - AUTO LOGIN FIXED</title>
+    <title>STAR TALK - VOIP</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        :root { --main: #fee500; --bg: #abc1d1; }
+        :root { --main: #fee500; --bg: #abc1d1; --call: #4cd964; --red: #ff3b30; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; position: fixed; font-family: sans-serif; }
 
-        /* [로그인 UI] */
-        #login-ui { position: fixed; inset: 0; background: #fff; z-index: 5000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-        .login-input { width: 100%; max-width: 300px; height: 50px; margin-bottom: 10px; padding: 15px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; }
-        .btn-login { width: 100%; max-width: 300px; height: 50px; background: #000; color: #fff; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        /* [메인 헤더] */
+        header { 
+            height: 60px; background: #fff; border-bottom: 1px solid #eee; 
+            display: flex; align-items: center; justify-content: space-between; padding: 0 15px; flex-shrink: 0; 
+        }
+        #target-title { font-size: 18px; font-weight: bold; }
+        
+        /* [전화기 버튼] */
+        .call-btn { 
+            width: 44px; height: 44px; background: var(--call); color: white; 
+            border: none; border-radius: 50%; font-size: 20px; 
+            display: none; align-items: center; justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2); cursor: pointer;
+        }
 
-        /* [메인 화면] */
-        #main-app { display: none; flex-direction: column; height: 100%; background: var(--bg); }
-        header { height: 60px; background: #fff; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; flex-shrink: 0; }
-        #chat-view { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        /* [통화 화면 Overlay] */
+        #call-screen { 
+            position: fixed; inset: 0; background: rgba(0,0,0,0.95); 
+            z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; 
+        }
+        .call-user-img { width: 100px; height: 100px; background: #555; border-radius: 50%; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; font-size: 40px; }
+        .hangup-btn { width: 70px; height: 70px; background: var(--red); border: none; border-radius: 50%; color: white; font-size: 24px; margin-top: 50px; cursor: pointer; }
 
-        /* 하단 입력창 */
-        footer { height: 70px; background: #fff; border-top: 1px solid #ddd; display: flex; align-items: center; gap: 8px; padding: 0 10px; flex-shrink: 0; }
-        #m-in { flex: 1; height: 45px; background: #f0f0f0; border-radius: 22px; padding: 0 15px; border: 1px solid #ddd; outline: none; }
+        /* 채팅 UI */
+        #chat-view { flex: 1; overflow-y: auto; background: var(--bg); padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .msg { padding: 10px 14px; border-radius: 12px; max-width: 80%; font-size: 15px; }
+        .me { align-self: flex-end; background: var(--main); }
+        .o { align-self: flex-start; background: #fff; }
+
+        /* 하단 입력바 */
+        footer { height: 70px; background: #fff; border-top: 1px solid #ddd; display: flex; align-items: center; gap: 8px; padding: 0 10px; padding-bottom: env(safe-area-inset-bottom); }
+        #m-in { flex: 1; height: 45px; background: #f0f0f0; border-radius: 22px; padding: 0 15px; border: none; font-size: 16px; outline: none; }
         .send-btn { width: 60px; height: 45px; background: var(--main); border: none; border-radius: 10px; font-weight: bold; }
 
-        /* 사이드 메뉴 */
+        /* 로그인/메뉴 공통 */
+        #login-ui { position: fixed; inset: 0; background: #fff; z-index: 5000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        .login-input { width: 100%; max-width: 300px; height: 50px; margin-bottom: 10px; padding: 15px; border: 1px solid #ddd; border-radius: 10px; }
         #side-menu { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background: #fff; z-index: 4000; transition: 0.3s; }
         #side-menu.open { left: 0; }
         #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 3500; display: none; }
-
-        /* 말풍선 */
-        .msg { padding: 10px 14px; border-radius: 12px; max-width: 80%; font-size: 15px; word-break: break-all; }
-        .me { align-self: flex-end; background: var(--main); }
-        .o { align-self: flex-start; background: #fff; }
     </style>
 </head>
 <body>
 
+    <div id="call-screen">
+        <div class="call-user-img">👤</div>
+        <h2 id="call-user-name">상대방</h2>
+        <p id="call-timer">연결 중...</p>
+        <button class="hangup-btn" onclick="window.endCall()">📞</button>
+    </div>
+
     <div id="login-ui">
-        <h2 style="margin-bottom:30px;">STAR TALK</h2>
+        <h2>STAR TALK</h2>
         <input type="text" id="myId" class="login-input" placeholder="아이디">
         <input type="password" id="myPw" class="login-input" placeholder="비밀번호">
-        <button class="btn-login" onclick="window.handleLogin()">로그인</button>
-        <p id="auto-status" style="font-size:12px; color:#999; margin-top:15px;">자동 로그인 정보를 확인하는 중...</p>
+        <button onclick="window.handleLogin()" style="width:100%; max-width:300px; height:50px; background:#000; color:#fff; border-radius:10px;">시작하기</button>
     </div>
 
     <div id="overlay" onclick="window.toggleMenu()"></div>
@@ -56,11 +78,11 @@
         <button onclick="window.handleLogout()" style="width:100%; padding:15px; border:none; background:#f5f5f5; color:red; margin-top:auto;">로그아웃</button>
     </nav>
 
-    <main id="main-app">
+    <main id="main-app" style="display:none; flex-direction:column; height:100%;">
         <header>
             <button onclick="window.toggleMenu()" style="background:none; border:none; font-size:24px;">≡</button>
             <b id="target-title">채팅</b>
-            <div style="width:24px;"></div>
+            <button id="btn-call" class="call-btn" onclick="window.makeCall()">📞</button>
         </header>
         <div id="chat-view"></div>
         <footer>
@@ -83,84 +105,93 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    let myId, targetId;
+    let myId, targetId, peer, currentCall, myStream;
 
-    // 메뉴 토글
-    window.toggleMenu = () => {
-        const menu = document.getElementById('side-menu');
-        const overlay = document.getElementById('overlay');
-        const isOpen = menu.classList.toggle('open');
-        overlay.style.display = isOpen ? 'block' : 'none';
-    };
-
-    // [중요] 로그인 함수 보강
-    window.handleLogin = async (isAuto = false) => {
-        const idIn = document.getElementById('myId');
-        const pwIn = document.getElementById('myPw');
-        const id = idIn.value.trim().toLowerCase();
-        const pw = pwIn.value.trim();
-
-        if(!id || !pw) {
-            document.getElementById('auto-status').innerText = "아이디를 입력해주세요.";
-            return;
-        }
-
-        try {
-            const snap = await get(ref(db, `auth/${id}`));
-            
-            // 로그인 성공 조건
-            if(!snap.exists() || snap.val().pw === pw) {
-                if(!snap.exists()) await set(ref(db, `auth/${id}`), {pw});
-                
-                myId = id;
-                // 성공 시 브라우저에 확실히 저장
-                localStorage.setItem('st_id', id);
-                localStorage.setItem('st_pw', pw);
-
-                document.getElementById('login-ui').style.display = 'none';
-                document.getElementById('main-app').style.display = 'flex';
-                loadFriends();
-            } else {
-                if(isAuto) {
-                    localStorage.removeItem('st_id');
-                    localStorage.removeItem('st_pw');
-                }
-                alert("비밀번호가 틀립니다.");
-            }
-        } catch (e) {
-            console.error(e);
-        }
-    };
-
-    // [핵심] 페이지 로드 시 자동 로그인 실행
-    window.addEventListener('load', () => {
-        const sid = localStorage.getItem('st_id');
-        const spw = localStorage.getItem('st_pw');
+    // 1. PeerJS 초기화 (전화 서버 연결)
+    function initCallSystem() {
+        peer = new Peer(myId);
         
-        if (sid && spw) {
-            document.getElementById('myId').value = sid;
-            document.getElementById('myPw').value = spw;
-            document.getElementById('auto-status').innerText = "자동 로그인 중...";
-            window.handleLogin(true);
-        } else {
-            document.getElementById('auto-status').innerText = "환영합니다!";
+        // 전화가 왔을 때
+        peer.on('call', async (call) => {
+            if(confirm(call.peer + "님에게 전화가 왔습니다! 받으시겠습니까?")) {
+                try {
+                    myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    call.answer(myStream);
+                    handleCallStream(call);
+                } catch(e) { alert("마이크 권한이 필요합니다."); }
+            }
+        });
+    }
+
+    // 2. 전화 걸기
+    window.makeCall = async () => {
+        if(!targetId) return;
+        try {
+            myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const call = peer.call(targetId, myStream);
+            handleCallStream(call);
+        } catch(e) { alert("마이크를 사용할 수 없습니다."); }
+    };
+
+    // 3. 통화 연결 처리
+    function handleCallStream(call) {
+        currentCall = call;
+        document.getElementById('call-screen').style.display = 'flex';
+        document.getElementById('call-user-name').innerText = call.peer;
+        document.getElementById('call-timer').innerText = "연결됨";
+
+        call.on('stream', (remoteStream) => {
+            const audio = new Audio();
+            audio.srcObject = remoteStream;
+            audio.play();
+        });
+
+        call.on('close', () => window.endCall());
+    }
+
+    // 4. 통화 종료
+    window.endCall = () => {
+        if(currentCall) currentCall.close();
+        if(myStream) myStream.getTracks().forEach(track => track.stop());
+        document.getElementById('call-screen').style.display = 'none';
+    };
+
+    // --- 기존 로그인 및 채팅 로직 ---
+    window.handleLogin = async () => {
+        const id = document.getElementById('myId').value.trim().toLowerCase();
+        const pw = document.getElementById('myPw').value.trim();
+        if(!id || !pw) return;
+
+        const snap = await get(ref(db, `auth/${id}`));
+        if(!snap.exists() || snap.val().pw === pw) {
+            if(!snap.exists()) await set(ref(db, `auth/${id}`), {pw});
+            myId = id;
+            localStorage.setItem('st_id', id); localStorage.setItem('st_pw', pw);
+            document.getElementById('login-ui').style.display = 'none';
+            document.getElementById('main-app').style.display = 'flex';
+            initCallSystem(); loadFriends();
+        } else alert("비밀번호 오류");
+    };
+
+    window.addEventListener('load', () => {
+        const sid = localStorage.getItem('st_id'), spw = localStorage.getItem('st_pw');
+        if(sid && spw) {
+            document.getElementById('myId').value = sid; document.getElementById('myPw').value = spw;
+            window.handleLogin();
         }
     });
 
-    window.handleLogout = () => {
-        if(confirm("로그아웃 하시겠습니까?")) {
-            localStorage.clear();
-            location.reload();
-        }
+    window.toggleMenu = () => {
+        document.getElementById('side-menu').classList.toggle('open');
+        document.getElementById('overlay').style.display = document.getElementById('side-menu').classList.contains('open') ? 'block' : 'none';
     };
 
     function loadFriends() {
         onValue(ref(db, `users/${myId}/f`), snap => {
-            const list = document.getElementById('friend-list');
-            list.innerHTML = "";
+            const list = document.getElementById('friend-list'); list.innerHTML = "";
             if(snap.val()) Object.keys(snap.val()).forEach(fid => {
                 const item = document.createElement('div');
-                item.style = "padding:15px; border-bottom:1px solid #f0f0f0; font-weight:bold; cursor:pointer;";
+                item.style = "padding:15px; border-bottom:1px solid #eee; font-weight:bold;";
                 item.innerHTML = `👤 ${fid}`;
                 item.onclick = () => { window.openChat(fid); window.toggleMenu(); };
                 list.appendChild(item);
@@ -171,14 +202,14 @@
     window.openChat = (fid) => {
         targetId = fid;
         document.getElementById('target-title').innerText = fid;
+        document.getElementById('btn-call').style.display = 'flex';
         const rid = [myId, fid].sort().join("_");
         onValue(ref(db, `msgs/${rid}`), s => {
             const v = document.getElementById('chat-view'); v.innerHTML = "";
             if(s.val()) Object.values(s.val()).forEach(m => {
                 const div = document.createElement('div');
                 div.className = `msg ${m.s === myId ? 'me' : 'o'}`;
-                div.innerText = m.t;
-                v.appendChild(div);
+                div.innerText = m.t; v.appendChild(div);
             });
             v.scrollTop = v.scrollHeight;
         });
@@ -194,11 +225,10 @@
 
     window.handleAddFriend = async () => {
         const fid = prompt("친구 ID:").toLowerCase().trim();
-        if(fid && fid !== myId) {
-            const check = await get(ref(db, `auth/${fid}`));
-            if(check.exists()) await set(ref(db, `users/${myId}/f/${fid}`), {id: fid});
-        }
+        if(fid && fid !== myId) await set(ref(db, `users/${myId}/f/${fid}`), {id: fid});
     };
+
+    window.handleLogout = () => { localStorage.clear(); location.reload(); };
 </script>
 </body>
 </html>
