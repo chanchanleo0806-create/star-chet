@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>STAR TALK FINAL</title>
+    <title>STAR TALK FINAL FIX</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #0a0a0c; --card: rgba(255, 255, 255, 0.03); --yellow: #fee500; --accent: #ff3b30; --text: #ffffff; --chat-bg: #abc1d1; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', sans-serif; -webkit-tap-highlight-color: transparent; }
         body, html { height: 100%; width: 100%; overflow: hidden; background: var(--bg); color: var(--text); }
 
-        /* [1] 로그인 UI (네오 다크 스타일) */
+        /* [1] 로그인 UI */
         #auth-ui { position: fixed; inset: 0; background: radial-gradient(circle at 20% 20%, #1a1a2e 0%, #0a0a0c 100%); z-index: 10000; display: flex; align-items: center; justify-content: center; }
         .auth-card { width: 340px; background: var(--card); backdrop-filter: blur(20px); padding: 50px 30px; border-radius: 40px; border: 1px solid rgba(255, 255, 255, 0.08); text-align: center; }
         .input-group input { width: 100%; padding: 18px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; color: #fff; margin-bottom: 12px; outline: none; }
@@ -25,7 +25,7 @@
         .panel { display: none; height: 100%; flex-direction: column; }
         .panel.active { display: flex; }
 
-        /* [3] 채팅 & 리스트 UI (상태/읽음 추가) */
+        /* [3] 채팅 & 리스트 UI */
         .list-item { padding: 15px; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid #f9f9f9; cursor: pointer; position: relative; }
         .status-dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid #fff; position: absolute; left: 45px; bottom: 15px; background: #ccc; }
         .status-dot.online { background: #2ecc71; }
@@ -35,7 +35,7 @@
         .bubble-container { display: flex; flex-direction: column; max-width: 75%; }
         .me-container { align-self: flex-end; align-items: flex-end; }
         .you-container { align-self: flex-start; align-items: flex-start; }
-        .bubble { padding: 10px; border-radius: 12px; font-size: 14px; color: #000; position: relative; }
+        .bubble { padding: 10px; border-radius: 12px; font-size: 14px; color: #000; position: relative; word-break: break-all; }
         .me { background: var(--yellow); }
         .you { background: #fff; }
         .read-count { font-size: 10px; color: var(--yellow); margin-bottom: 2px; font-weight: bold; }
@@ -66,12 +66,17 @@
             <div id="friend-list"></div>
         </div>
         <div id="panel-set" class="panel">
+            <div style="padding:25px; font-size:20px; font-weight:800;">설정</div>
             <div style="padding:40px; text-align:center;">
-                <img id="my-pic-ui" src="https://via.placeholder.com/100" style="width:100px; height:100px; border-radius:40px; object-fit:cover;">
-                <h3 id="my-name-ui" style="margin:15px 0;">이름</h3>
-                <button onclick="window.updateProfile()" style="padding:8px 15px; border-radius:10px; border:1px solid #ddd;">프로필 편집</button>
+                <div style="position:relative; display:inline-block;">
+                    <img id="my-pic-ui" src="https://via.placeholder.com/100" style="width:110px; height:110px; border-radius:40px; object-fit:cover; background:#eee;">
+                    <label for="profile-up" style="position:absolute; bottom:0; right:0; background:#000; color:#fff; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; border:2px solid #fff;">+</label>
+                    <input type="file" id="profile-up" hidden accept="image/*" onchange="window.handleProfilePic(this)">
+                </div>
+                <h3 id="my-name-ui" style="margin:20px 0;">이름</h3>
+                <button onclick="window.handleEditName()" style="padding:10px 20px; border-radius:12px; border:1px solid #ddd; background:#fff; font-weight:600;">이름 편집</button>
                 <br><br>
-                <button onclick="window.doLogout()" style="color:red; background:none; border:none; cursor:pointer;">로그아웃</button>
+                <button onclick="window.doLogout()" style="color:red; background:none; border:none; cursor:pointer; font-size:14px;">로그아웃</button>
             </div>
         </div>
     </div>
@@ -83,7 +88,9 @@
         <b id="chat-target-name">이름</b>
     </div>
     <div id="chat-view"></div>
-    <div style="padding:10px; background:#fff; display:flex; gap:8px;">
+    <div style="padding:10px; background:#fff; display:flex; gap:8px; align-items:center;">
+        <label for="chat-file-up" style="font-size:22px; cursor:pointer; padding:0 5px;">📎</label>
+        <input type="file" id="chat-file-up" hidden onchange="window.handleChatFile(this)">
         <input type="text" id="msg-input" style="flex:1; padding:10px; border:1px solid #ddd; border-radius:20px; outline:none;" placeholder="메시지 입력..." onkeypress="if(event.keyCode==13) window.sendMsg()">
         <button onclick="window.sendMsg()" style="background:var(--yellow); border:none; padding:10px 15px; border-radius:10px; font-weight:bold;">전송</button>
     </div>
@@ -96,46 +103,75 @@
     const firebaseConfig = { apiKey: "AIzaSyAcBQ_Pyt4kdExDLGyNZJwWGbCdGDzVIjQ", databaseURL: "https://starchet-e9630-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "starchet-e9630" };
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    let myId, activeRid, selFid;
+    let myId, activeRid;
 
-    // [1] 로그인 & 상태 관리
+    // [1] 인증 & 프로필 편집 로직
     window.handleAuth = async (type) => {
         const id = document.getElementById('authId').value.trim().toLowerCase();
         const pw = document.getElementById('authPw').value.trim();
-        if(!id || !pw) return alert("입력 필수");
+        if(!id || !pw) return alert("아이디와 비밀번호를 입력하세요.");
         const userRef = ref(db, `users/${id}`);
         const snap = await get(userRef);
 
         if(type === 'signup') {
-            if(snap.exists()) return alert("이미 있는 아이디");
+            if(snap.exists()) return alert("중복된 아이디입니다.");
             await set(userRef, { id, pw, name: id, pic: "" });
-            alert("가입 성공");
+            alert("가입 성공! 로그인해주세요.");
         } else {
             if(snap.exists() && String(snap.val().pw) === String(pw)) {
                 myId = id; localStorage.setItem('st_id', id); startApp();
-            } else alert("불일치");
+            } else alert("아이디 또는 비밀번호가 틀립니다.");
         }
+    };
+
+    window.handleEditName = () => {
+        const n = prompt("새로운 이름을 입력하세요:");
+        if(n && n.trim()) update(ref(db, `users/${myId}`), { name: n.trim() });
+    };
+
+    window.handleProfilePic = (el) => {
+        const file = el.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = () => update(ref(db, `users/${myId}`), { pic: reader.result });
+        reader.readAsDataURL(file);
     };
 
     function startApp() {
         document.getElementById('auth-ui').style.display = 'none';
         document.getElementById('main-app').style.display = 'flex';
-        
-        // 온라인 상태 설정
-        const statusRef = ref(db, `status/${myId}`);
-        set(statusRef, "online");
-        onDisconnect(statusRef).set(serverTimestamp());
+        set(ref(db, `status/${myId}`), "online");
+        onDisconnect(ref(db, `status/${myId}`)).set(serverTimestamp());
 
         onValue(ref(db, `users/${myId}`), snap => {
             if(snap.exists()) {
-                document.getElementById('my-name-ui').innerText = snap.val().name;
-                if(snap.val().pic) document.getElementById('my-pic-ui').src = snap.val().pic;
+                const d = snap.val();
+                document.getElementById('my-name-ui').innerText = d.name;
+                if(d.pic) document.getElementById('my-pic-ui').src = d.pic;
             }
         });
         loadFriends();
     }
 
-    // [2] 친구 목록 및 온라인 상태 표시
+    // [2] 채팅 파일 업로드
+    window.handleChatFile = (el) => {
+        const file = el.files[0];
+        if(!file || !activeRid) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            push(ref(db, `msgs/${activeRid}`), {
+                s: myId,
+                t: `[파일 전송] ${file.name}`,
+                file: reader.result,
+                fileName: file.name,
+                type: 'file',
+                read: false
+            });
+        };
+        reader.readAsDataURL(file);
+    };
+
+    // [3] 친구 목록 & 읽음 표시
     function loadFriends() {
         onValue(ref(db, `friends/${myId}`), snap => {
             const list = document.getElementById('friend-list'); list.innerHTML = "";
@@ -144,41 +180,35 @@
                     const item = document.createElement('div');
                     item.className = "list-item";
                     item.innerHTML = `<img src="https://via.placeholder.com/45" style="border-radius:18px;"><div id="dot-${fid}" class="status-dot"></div><b>${fid}</b>`;
-                    
-                    // 실시간 상태 감시
                     onValue(ref(db, `status/${fid}`), sSnap => {
                         const dot = document.getElementById(`dot-${fid}`);
                         if(dot) dot.className = sSnap.val() === "online" ? "status-dot online" : "status-dot";
                     });
-
-                    item.onclick = () => { window.selFid = fid; window.openChat(fid); };
+                    item.onclick = () => window.openChat(fid);
                     list.appendChild(item);
                 });
             }
         });
     }
 
-    // [3] 채팅 및 읽음 확인(1 표시)
     window.openChat = (fid) => {
         activeRid = [myId, fid].sort().join('_');
         document.getElementById('chat-target-name').innerText = fid;
         document.getElementById('chat-window').style.display = 'flex';
-
         onValue(ref(db, `msgs/${activeRid}`), snap => {
             const v = document.getElementById('chat-view'); v.innerHTML = "";
             if(snap.exists()) {
                 Object.keys(snap.val()).forEach(key => {
                     const m = snap.val()[key];
-                    // 읽음 처리: 내가 방에 있고, 상대가 보낸 메시지면 즉시 read: true 업데이트
                     if(m.s !== myId && !m.read) update(ref(db, `msgs/${activeRid}/${key}`), { read: true });
-
                     const container = document.createElement('div');
                     container.className = `bubble-container ${m.s === myId ? 'me-container' : 'you-container'}`;
-                    
-                    // 안 읽었으면 1 표시 (내가 보낸 메시지 한정)
                     const count = (m.s === myId && !m.read) ? `<div class="read-count">1</div>` : "";
-                    container.innerHTML = `${count}<div class="bubble ${m.s === myId ? 'me' : 'you'}">${m.t}</div>`;
                     
+                    let content = m.t;
+                    if(m.type === 'file') content = `📄 <a href="${m.file}" download="${m.fileName}" style="color:inherit; text-decoration:underline;">${m.fileName}</a>`;
+                    
+                    container.innerHTML = `${count}<div class="bubble ${m.s === myId ? 'me' : 'you'}">${content}</div>`;
                     v.appendChild(container);
                 });
             }
@@ -189,7 +219,7 @@
     window.sendMsg = () => {
         const i = document.getElementById('msg-input');
         if(!i.value.trim()) return;
-        push(ref(db, `msgs/${activeRid}`), { s: myId, t: i.value.trim(), read: false });
+        push(ref(db, `msgs/${activeRid}`), { s: myId, t: i.value.trim(), type: 'text', read: false });
         i.value = "";
     };
 
