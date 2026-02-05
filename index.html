@@ -3,92 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>STAR TALK - DIAGNOSIS</title>
+    <title>STAR TALK - LOGIN FIX</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        body { background: #fee500; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .login-box { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 90%; max-width: 350px; text-align: center; }
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #3c1e1e; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        #error-msg { color: red; font-size: 12px; margin-top: 10px; font-weight: bold; }
+        :root { --main: #FEE500; --dark: #3C1E1E; --bg: #bacee0; }
+        body { background: var(--main); font-family: 'Apple SD Gothic Neo', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-box { background: white; padding: 40px 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); width: 90%; max-width: 320px; text-align: center; }
+        .logo { font-size: 32px; font-weight: bold; color: var(--dark); margin-bottom: 30px; }
+        input { width: 100%; padding: 14px; margin: 8px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; font-size: 15px; outline: none; }
+        button { width: 100%; padding: 14px; background: var(--dark); color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; }
+        #status { color: #ff4747; font-size: 12px; margin-top: 15px; min-height: 18px; }
     </style>
 </head>
 <body>
 
-<div class="login-box" id="login-ui">
-    <h2>STAR LOGIN</h2>
-    <input type="text" id="myId" placeholder="아이디">
+<div id="login-ui" class="login-box">
+    <div class="logo">STAR TALK</div>
+    <input type="text" id="myId" placeholder="아이디 (문자/숫자)">
     <input type="password" id="myPw" placeholder="비밀번호">
-    <button onclick="checkAndLogin()">로그인 / 시작하기</button>
-    <div id="error-msg"></div>
+    <button id="loginBtn">로그인 / 시작하기</button>
+    <div id="status"></div>
 </div>
 
-<div id="app-main" style="display:none; width: 100%; max-width: 450px; background: #bacee0; height: 100vh;">
-    <h3 style="padding: 15px; background: #333; color: white; margin: 0;">로그인 성공!</h3>
-    <p style="padding: 20px;">이제 친구를 추가하고 대화하세요.</p>
+<div id="main-ui" style="display:none; width:100%; height:100vh; background: var(--bg);">
+    <div style="background:#333; color:white; padding:15px; display:flex; justify-content:space-between;">
+        <b id="display-id">접속됨</b>
+        <button onclick="location.reload()" style="background:none; border:1px solid #fff; color:#fff; cursor:pointer; font-size:11px;">로그아웃</button>
+    </div>
+    <div style="padding:20px; text-align:center;">
+        <h3>🎉 로그인 성공!</h3>
+        <p>친구를 추가하고 대화를 시작하세요.</p>
+    </div>
 </div>
 
 <script type="module">
+    // Firebase SDK 불러오기
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // ★★★ 중요: 이 부분을 본인의 파이어베이스 정보로 바꾸세요! ★★★
+    // 보내주신 설정값 적용
     const firebaseConfig = {
-        apiKey: "본인의 API키",
-        authDomain: "본인의 도메인",
-        databaseURL: "본인의 데이터베이스 주소", // 이게 없으면 로그인이 안 됩니다!
-        projectId: "본인의 아이디",
-        storageBucket: "본인의 버킷",
-        messagingSenderId: "번호",
-        appId: "앱아이디"
+        apiKey: "AIzaSyAcBQ_Pyt4kdExDLGyNZJwWGbCdGDzVIjQ",
+        authDomain: "starchet-e9630.firebaseapp.com",
+        databaseURL: "https://starchet-e9630-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "starchet-e9630",
+        storageBucket: "starchet-e9630.firebasestorage.app",
+        messagingSenderId: "532571302538",
+        appId: "1:532571302538:web:73ad808e560947ea02db73",
+        measurementId: "G-QPCFFFTKW6"
     };
 
-    // 진단 시스템
-    const errMsg = document.getElementById('error-msg');
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const status = document.getElementById('status');
 
-    try {
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+    // 로그인 버튼 클릭 이벤트
+    document.getElementById('loginBtn').addEventListener('click', async () => {
+        const id = document.getElementById('myId').value.trim();
+        const pw = document.getElementById('myPw').value.trim();
 
-        window.checkAndLogin = async () => {
-            const id = document.getElementById('myId').value.trim();
-            const pw = document.getElementById('myPw').value.trim();
+        if(!id || !pw) {
+            status.innerText = "아이디와 비번을 입력해주세요.";
+            return;
+        }
 
-            if(!id || !pw) {
-                errMsg.innerText = "⚠️ 아이디와 비번을 입력하세요.";
-                return;
-            }
+        status.innerText = "서버 연결 중...";
 
-            errMsg.innerText = "연결 시도 중...";
+        try {
+            const userRef = ref(db, `auth/${id}`);
+            const snap = await get(userRef);
 
-            try {
-                const userRef = ref(db, `auth/${id}`);
-                const snap = await get(userRef);
-
-                if(!snap.exists()) {
-                    await set(userRef, { pw: pw });
-                    alert("신규 가입 성공!");
-                    enterApp();
+            if(!snap.exists()) {
+                // 회원가입
+                await set(userRef, { pw: pw });
+                alert("반가워요! 신규 가입되었습니다.");
+                goMain(id);
+            } else {
+                // 로그인
+                if(snap.val().pw === pw) {
+                    goMain(id);
                 } else {
-                    if(snap.val().pw === pw) {
-                        enterApp();
-                    } else {
-                        errMsg.innerText = "❌ 비밀번호가 틀립니다.";
-                    }
+                    status.innerText = "비밀번호가 일치하지 않습니다.";
                 }
-            } catch (e) {
-                console.error(e);
-                errMsg.innerText = "🔥 에러: " + e.message;
             }
-        };
-    } catch (e) {
-        errMsg.innerText = "⚡ 파이어베이스 설정값(config)이 올바르지 않습니다.";
-    }
+        } catch (e) {
+            console.error(e);
+            status.innerText = "에러: " + e.message;
+            if(e.message.includes("permission_denied")) {
+                status.innerText = "파이어베이스 Rules(규칙)를 true로 바꿔주세요!";
+            }
+        }
+    });
 
-    function enterApp() {
+    function goMain(id) {
         document.getElementById('login-ui').style.display = 'none';
-        document.getElementById('app-main').style.display = 'block';
-        document.body.style.background = "#bacee0";
+        document.getElementById('main-ui').style.display = 'block';
+        document.getElementById('display-id').innerText = "ID: " + id;
     }
 </script>
 </body>
