@@ -3,38 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>STAR TALK - QUAD CONNECT</title>
+    <title>STAR TALK - SINGLE CONNECT</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root { --sidebar: #2c2c2e; --chat-bg: #f4f4f7; --point: #fee500; }
         body { margin: 0; font-family: sans-serif; background: #eee; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
-        /* 상단 바 */
+        /* 상단 계정 전환 바 */
         #auth-bar { background: #1a1a1a; padding: 8px 15px; display: none; gap: 10px; align-items: center; color: white; font-size: 11px; z-index: 10; }
         .acc-btn { padding: 4px 12px; border-radius: 15px; border: 1px solid #444; cursor: pointer; background: #333; color: #ccc; }
         .acc-btn.active { border-color: var(--point); color: var(--point); font-weight: bold; }
 
-        /* 로그인 */
+        /* 로그인 레이어 */
         #login-ui { position: fixed; inset: 0; background: var(--point); z-index: 3000; display: flex; align-items: center; justify-content: center; }
         .login-box { background: white; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; width: 280px; }
         .login-box input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; outline: none; }
         .login-box button { width: 100%; padding: 15px; background: #333; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
 
-        /* 친구 목록 (가로형) */
+        /* 친구 목록 */
         .story-container { background: white; padding: 15px; display: flex; gap: 15px; overflow-x: auto; border-bottom: 1px solid #eee; }
-        .story-container::-webkit-scrollbar { display: none; }
         .story-item { flex: 0 0 auto; text-align: center; width: 60px; cursor: pointer; }
         .story-img { width: 55px; height: 55px; border-radius: 22px; background: #eee; border: 2px solid var(--point); object-fit: cover; }
-        .story-name { font-size: 11px; margin-top: 5px; color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .story-name { font-size: 11px; margin-top: 5px; color: #333; }
 
         /* 채팅 구역 */
         main { flex: 1; display: flex; flex-direction: column; background: var(--chat-bg); }
         header { padding: 15px 20px; background: white; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }
         #chat-view { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { padding: 10px 14px; border-radius: 15px; max-width: 70%; font-size: 14px; }
+        .msg { padding: 10px 14px; border-radius: 15px; max-width: 70%; font-size: 14px; line-height: 1.4; }
         .me { align-self: flex-end; background: var(--point); border-top-right-radius: 2px; }
         .o { align-self: flex-start; background: white; border-top-left-radius: 2px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-
+        
         footer { padding: 15px; background: white; display: none; gap: 10px; border-top: 1px solid #eee; }
         #m-in { flex: 1; border: none; background: #f0f0f2; padding: 12px; border-radius: 20px; outline: none; }
     </style>
@@ -44,16 +43,15 @@
 <div id="auth-bar">
     <span>계정 전환:</span>
     <div id="acc-list" style="display:flex; gap:8px;"></div>
-    <span onclick="logout()" style="margin-left:auto; cursor:pointer; color:#888;">로그아웃</span>
+    <span onclick="window.logout()" style="margin-left:auto; cursor:pointer; color:#888;">로그아웃</span>
 </div>
 
 <div id="login-ui">
     <div class="login-box">
-        <h2 style="margin-top:0;">STAR TALK</h2>
+        <h2>STAR TALK</h2>
         <input type="text" id="myId" placeholder="아이디">
         <input type="password" id="myPw" placeholder="비밀번호">
-        <button onclick="window.loginFunc()">로그인 / 시작</button>
-        <p style="font-size:11px; color:#999; margin-top:10px;">멀티 세션 모드 (4개 기기 가능)</p>
+        <button onclick="window.loginFunc()">로그인</button>
     </div>
 </div>
 
@@ -73,7 +71,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, get, push, onValue, remove, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, set, get, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const conf = {
         apiKey: "AIzaSyAcBQ_Pyt4kdExDLGyNZJwWGbCdGDzVIjQ",
@@ -87,7 +85,7 @@
 
     const app = initializeApp(conf);
     const db = getDatabase(app);
-    let rawId, myPeerId, targetId, peer;
+    let myId, targetId, peer;
 
     window.loginFunc = async () => {
         const id = document.getElementById('myId').value.trim();
@@ -97,56 +95,40 @@
         const snap = await get(ref(db, `auth/${id}`));
         if(!snap.exists() || snap.val().pw === pw) {
             if(!snap.exists()) await set(ref(db, `auth/${id}`), {pw, nick: id});
+            
+            // 자동 로그인 정보 저장
             localStorage.setItem('lastUser', id);
             let accs = JSON.parse(localStorage.getItem('accounts') || '{}');
             accs[id] = pw;
             localStorage.setItem('accounts', JSON.stringify(accs));
-            initMultiPeer(id);
-        } else alert("비밀번호 불일치");
+            
+            initSinglePeer(id);
+        } else alert("비밀번호가 틀립니다.");
     };
 
-    async function initMultiPeer(baseId) {
-        rawId = baseId;
-        let successConnection = false;
+    function initSinglePeer(id) {
+        myId = id;
+        if(peer) peer.destroy();
+        
+        peer = new Peer(myId);
+        
+        peer.on('open', () => {
+            document.getElementById('login-ui').style.display = 'none';
+            document.getElementById('auth-bar').style.display = 'flex';
+            updateAccBar();
+            loadStories();
+        });
 
-        for (let i = 1; i <= 4; i++) {
-            const tryId = `${baseId}_${i}`;
-            const p = new Peer(tryId);
-            
-            const isAvailable = await new Promise(res => {
-                p.on('open', () => res(true));
-                p.on('error', () => res(false));
-                setTimeout(() => res(false), 1200);
-            });
-
-            if (isAvailable) {
-                peer = p;
-                myPeerId = tryId;
-                successConnection = true;
-                
-                // [출석부 등록] 연결 끊기면 파이어베이스에서 자동 제거
-                const myStatusRef = ref(db, `status/${rawId}/${myPeerId}`);
-                set(myStatusRef, true);
-                onDisconnect(myStatusRef).remove();
-                
-                completeLogin();
-                break;
+        peer.on('error', (err) => {
+            if(err.type === 'unavailable-id') {
+                if(confirm("이미 다른 기기에서 접속 중입니다. 기존 연결을 끊고 현재 기기로 접속할까요?")) {
+                    // 서버에 정리할 시간을 주기 위해 새로고침 시도
+                    location.reload(); 
+                }
             } else {
-                p.destroy();
+                console.error(err);
             }
-        }
-
-        if (!successConnection) {
-            alert("이미 4개의 기기에서 접속 중입니다. 잠시 후 시도하세요.");
-            location.reload();
-        }
-    }
-
-    function completeLogin() {
-        document.getElementById('login-ui').style.display = 'none';
-        document.getElementById('auth-bar').style.display = 'flex';
-        updateAccBar();
-        loadStories();
+        });
     }
 
     window.logout = () => {
@@ -158,28 +140,29 @@
         const bar = document.getElementById('acc-list');
         const accs = JSON.parse(localStorage.getItem('accounts') || '{}');
         bar.innerHTML = "";
-        Object.keys(accs).forEach(id => {
-            const active = id === rawId ? 'active' : '';
-            bar.innerHTML += `<div class="acc-btn ${active}" onclick="localStorage.setItem('lastUser','${id}'); location.reload();">${id}</div>`;
+        Object.keys(accs).forEach(accId => {
+            const active = accId === myId ? 'active' : '';
+            bar.innerHTML += `<div class="acc-btn ${active}" onclick="localStorage.setItem('lastUser','${accId}'); location.reload();">${accId}</div>`;
         });
     }
 
     window.addFriend = async () => {
-        const fid = prompt("추가할 ID:");
-        if(!fid || fid === rawId) return;
+        const fid = prompt("추가할 친구 ID:");
+        if(!fid || fid === myId) return;
         const check = await get(ref(db, `auth/${fid}`));
-        if(check.exists()) set(ref(db, `users/${rawId}/f/${fid}`), {id: fid});
-        else alert("존재하지 않는 유저입니다.");
+        if(check.exists()) set(ref(db, `users/${myId}/f/${fid}`), {id: fid});
+        else alert("존재하지 않는 사용자입니다.");
     };
 
     function loadStories() {
-        onValue(ref(db, `users/${rawId}/f`), async snap => {
+        onValue(ref(db, `users/${myId}/f`), async snap => {
             const area = document.getElementById('story-area'); area.innerHTML = "";
             if(snap.val()) for(let fid of Object.keys(snap.val())) {
-                area.innerHTML += `<div class="story-item" onclick="window.openChat('${fid}')">
-                    <img class="story-img" src="https://cdn-icons-png.flaticon.com/512/149/149071.png">
-                    <div class="story-name">${fid}</div>
-                </div>`;
+                area.innerHTML += `
+                    <div class="story-item" onclick="window.openChat('${fid}')">
+                        <img class="story-img" src="https://cdn-icons-png.flaticon.com/512/149/149071.png">
+                        <div class="story-name">${fid}</div>
+                    </div>`;
             }
         });
     }
@@ -188,11 +171,11 @@
         targetId = fid;
         document.getElementById('target-name').innerText = fid;
         document.getElementById('chat-footer').style.display = 'flex';
-        const rid = [rawId, fid].sort().join("_");
+        const rid = [myId, fid].sort().join("_");
         onValue(ref(db, `msgs/${rid}`), s => {
             const v = document.getElementById('chat-view'); v.innerHTML = "";
             if(s.val()) Object.values(s.val()).forEach(m => {
-                const cls = m.s === rawId ? 'me' : 'o';
+                const cls = m.s === myId ? 'me' : 'o';
                 v.innerHTML += `<div class="msg ${cls}">${m.t}</div>`;
             });
             v.scrollTop = v.scrollHeight;
@@ -201,13 +184,13 @@
 
     window.sendMsg = () => {
         const i = document.getElementById('m-in'); if(!i.value) return;
-        const rid = [rawId, targetId].sort().join("_");
-        push(ref(db, `msgs/${rid}`), {t: i.value, s: rawId});
+        const rid = [myId, targetId].sort().join("_");
+        push(ref(db, `msgs/${rid}`), {t: i.value, s: myId});
         i.value = "";
     };
 
     const last = localStorage.getItem('lastUser');
-    if(last) initMultiPeer(last);
+    if(last) initSinglePeer(last);
 </script>
 </body>
 </html>
