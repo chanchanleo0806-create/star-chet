@@ -3,76 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>STAR TALK - FIXED</title>
+    <title>카카오톡</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        :root { --main: #fee500; --bg: #abc1d1; --white: #ffffff; }
+        :root { --k-yellow: #fee500; --k-bg: #abc1d1; --k-white: #ffffff; --k-text: #3c1e1e; --k-header: #abc1d1; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: sans-serif; }
-        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; position: fixed; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--k-bg); }
 
-        /* [로그인 UI] */
-        #login-ui { position: fixed; inset: 0; background: #fff; z-index: 5000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-        .login-input { width: 100%; max-width: 300px; height: 50px; margin-bottom: 10px; padding: 15px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; }
+        /* [상단 헤더] */
+        header { height: 55px; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; background: var(--k-header); position: sticky; top: 0; z-index: 100; }
+        .back-icon { font-size: 20px; cursor: pointer; display: flex; align-items: center; }
+        #chat-title { font-size: 18px; font-weight: 600; flex: 1; margin-left: 10px; }
+        .header-icons span { margin-left: 15px; font-size: 20px; cursor: pointer; }
 
-        /* [메인 화면] */
-        #main-app { display: none; flex-direction: column; height: 100%; background: var(--bg); }
-        header { height: 60px; background: #fff; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; flex-shrink: 0; }
-        #chat-view { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-
-        /* [말풍선 & 읽음 숫자 핵심 디자인] */
-        .msg-wrap { display: flex; flex-direction: column; max-width: 80%; }
-        .msg-wrap.me { align-self: flex-end; align-items: flex-end; }
-        .msg-wrap.o { align-self: flex-start; align-items: flex-start; }
+        /* [채팅 영역] */
+        #chat-view { height: calc(100vh - 115px); overflow-y: auto; padding: 15px; display: flex; flex-direction: column; }
+        .msg-row { display: flex; margin-bottom: 15px; position: relative; }
+        .msg-row.me { flex-direction: row-reverse; }
         
-        .bubble-row { display: flex; align-items: flex-end; gap: 4px; }
-        .me .bubble-row { flex-direction: row-reverse; }
-        
-        .bubble { padding: 10px 14px; border-radius: 15px; font-size: 15px; word-break: break-all; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
-        .me .bubble { background: var(--main); border-top-right-radius: 2px; }
-        .o .bubble { background: var(--white); border-top-left-radius: 2px; }
+        .profile-img { width: 40px; height: 40px; background: #eee; border-radius: 15px; margin-right: 8px; }
+        .me .profile-img { display: none; }
 
-        /* 노란색 읽음 숫자 */
-        .unread-num { color: var(--main); font-size: 11px; font-weight: bold; margin-bottom: 2px; cursor: pointer; }
+        .msg-content { display: flex; flex-direction: column; max-width: 70%; }
+        .me .msg-content { align-items: flex-end; }
 
-        /* [하단바] */
-        footer { height: 70px; background: #fff; display: flex; align-items: center; gap: 8px; padding: 0 10px; }
-        #m-in { flex: 1; height: 45px; background: #f0f0f0; border-radius: 22px; padding: 0 15px; border: none; font-size: 16px; outline: none; }
-        
-        /* [사이드 메뉴] */
-        #side-menu { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background: #fff; z-index: 4000; transition: 0.3s; }
-        #side-menu.open { left: 0; }
-        #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 3500; display: none; }
-        .room-item { padding: 15px; border-bottom: 1px solid #eee; font-weight: bold; cursor: pointer; }
+        .user-name { font-size: 12px; color: #444; margin-bottom: 3px; }
+        .bubble-group { display: flex; align-items: flex-end; gap: 5px; }
+        .me .bubble-group { flex-direction: row-reverse; }
+
+        .bubble { padding: 8px 12px; border-radius: 13px; font-size: 14.5px; line-height: 1.4; position: relative; word-break: break-all; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .o .bubble { background: var(--k-white); border-top-left-radius: 2px; }
+        .me .bubble { background: var(--k-yellow); border-top-right-radius: 2px; }
+
+        /* 읽음 숫자 (노란색) */
+        .unread { color: var(--k-yellow); font-size: 10px; font-weight: bold; margin-bottom: 2px; }
+
+        /* [하단 입력창] */
+        footer { height: 60px; background: #fff; display: flex; align-items: center; padding: 0 10px; gap: 8px; position: fixed; bottom: 0; width: 100%; border-top: 1px solid #ddd; }
+        #m-in { flex: 1; height: 36px; border: 1px solid #ddd; border-radius: 18px; padding: 0 15px; font-size: 15px; outline: none; background: #fcfcfc; }
+        .send-btn { width: 50px; height: 36px; background: var(--k-yellow); border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+
+        /* [로그인 화면] */
+        #login-screen { position: fixed; inset: 0; background: var(--k-yellow); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; }
+        .l-input { width: 100%; height: 45px; border: none; border-bottom: 1px solid rgba(0,0,0,0.1); background: transparent; margin-bottom: 10px; font-size: 16px; outline: none; }
+        .l-btn { width: 100%; height: 45px; background: #3c1e1e; color: white; border: none; border-radius: 4px; font-weight: bold; margin-top: 20px; }
+
+        /* [통화 레이어] */
+        #voip-ui { position: fixed; inset: 0; background: #2c3e50; z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; }
+        .call-end-btn { width: 65px; height: 65px; background: #ff3b30; border-radius: 50%; border: none; color: white; font-size: 28px; margin-top: 50px; cursor: pointer; }
+
+        /* [사이드바] */
+        #side-bar { position: fixed; top: 0; left: -100%; width: 85%; height: 100%; background: #fff; z-index: 500; transition: 0.3s; padding-top: 50px; }
+        #side-bar.open { left: 0; }
+        .room-item { padding: 15px; border-bottom: 1px solid #eee; display: flex; align-items: center; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="login-ui">
-        <h2>STAR TALK</h2>
-        <input type="text" id="myId" class="login-input" placeholder="아이디">
-        <input type="password" id="myPw" class="login-input" placeholder="비밀번호">
-        <button onclick="window.handleLogin()" style="width:100%; max-width:300px; height:50px; background:#000; color:#fff; border-radius:10px;">로그인</button>
+    <div id="login-screen">
+        <h2 style="color:#3c1e1e; margin-bottom:50px;">카카오톡</h2>
+        <input type="text" id="myId" class="l-input" placeholder="카카오계정 아이디">
+        <input type="password" id="myPw" class="l-input" placeholder="비밀번호">
+        <button class="l-btn" onclick="window.handleLogin()">로그인</button>
     </div>
 
-    <div id="overlay" onclick="window.toggleMenu()"></div>
-    <nav id="side-menu">
-        <div style="padding:20px; background:#f9f9f9; display:flex; justify-content:space-between; align-items:center;">
-            <b>채팅방 목록</b>
-            <button onclick="window.createGroup()" style="padding:5px 10px; background:var(--main); border:none; border-radius:5px; font-weight:bold;">+ 생성</button>
-        </div>
-        <div id="chat-list"></div>
-        <button onclick="window.handleLogout()" style="width:100%; padding:15px; border:none; color:red; position:absolute; bottom:0;">로그아웃</button>
-    </nav>
+    <div id="voip-ui">
+        <div style="font-size: 22px; margin-bottom: 10px;" id="voip-name">보이스톡</div>
+        <div id="voip-status">연결 시도 중...</div>
+        <button class="call-end-btn" onclick="window.endCall()">✕</button>
+    </div>
 
-    <main id="main-app">
+    <div id="side-bar">
+        <div style="padding:15px; display:flex; justify-content:space-between;">
+            <b>채팅 목록</b> <button onclick="window.createGroup()">+</button>
+        </div>
+        <div id="room-list"></div>
+        <button onclick="window.handleLogout()" style="position:absolute; bottom:20px; left:20px; border:none; color:red;">로그아웃</button>
+    </div>
+
+    <main id="main-ui" style="display:none;">
         <header>
-            <button onclick="window.toggleMenu()" style="background:none; border:none; font-size:24px;">≡</button>
-            <b id="chat-title">방을 선택해 주세요</b>
-            <div style="width:24px;"></div>
+            <div class="back-icon" onclick="window.toggleSidebar()">☰</div>
+            <div id="chat-title">채팅방</div>
+            <div class="header-icons">
+                <span onclick="window.makeCall()">📞</span>
+                <span>🔍</span>
+            </div>
         </header>
         <div id="chat-view"></div>
         <footer>
-            <input type="text" id="m-in" placeholder="메시지 입력..." onkeypress="if(event.keyCode==13) window.handleSend()">
-            <button onclick="window.handleSend()" style="width:60px; height:45px; background:var(--main); border:none; border-radius:10px; font-weight:bold;">전송</button>
+            <input type="text" id="m-in" onkeypress="if(event.keyCode==13) window.handleSend()">
+            <button class="send-btn" onclick="window.handleSend()">전송</button>
         </footer>
     </main>
 
@@ -90,111 +111,122 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    let myId, currentChatId, currentMembers = [];
+    let myId, currentChatId, currentMembers = [], peer, currentCall, myStream;
 
-    // [1] 로그인 (자동로그인 포함)
+    // [전화 기능]
+    async function initVoIP() {
+        peer = new Peer(myId);
+        peer.on('call', async (call) => {
+            if(confirm("보이스톡 요청이 왔습니다. 받으시겠습니까?")) {
+                try {
+                    myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    call.answer(myStream);
+                    startCallUI(call);
+                } catch(e) { alert("마이크 권한 오류"); }
+            }
+        });
+    }
+
+    window.makeCall = async () => {
+        const tid = prompt("전화할 친구 아이디:");
+        if(!tid) return;
+        try {
+            myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const call = peer.call(tid, myStream);
+            startCallUI(call);
+        } catch(e) { alert("마이크 권한을 허용해주세요."); }
+    };
+
+    function startCallUI(call) {
+        currentCall = call;
+        document.getElementById('voip-ui').style.display = 'flex';
+        document.getElementById('voip-name').innerText = call.peer;
+        call.on('stream', stream => {
+            const audio = new Audio(); audio.srcObject = stream; audio.play();
+            document.getElementById('voip-status').innerText = "통화 중";
+        });
+        call.on('close', () => window.endCall());
+    }
+
+    window.endCall = () => {
+        if(currentCall) currentCall.close();
+        if(myStream) myStream.getTracks().forEach(t => t.stop());
+        document.getElementById('voip-ui').style.display = 'none';
+    };
+
+    // [채팅 및 로그인]
     window.handleLogin = async () => {
         const id = document.getElementById('myId').value.trim().toLowerCase();
         const pw = document.getElementById('myPw').value.trim();
         if(!id || !pw) return;
-
         const snap = await get(ref(db, `auth/${id}`));
         if(!snap.exists() || snap.val().pw === pw) {
             if(!snap.exists()) await set(ref(db, `auth/${id}`), {pw});
-            myId = id;
-            localStorage.setItem('st_id', id); localStorage.setItem('st_pw', pw);
-            document.getElementById('login-ui').style.display = 'none';
-            document.getElementById('main-app').style.display = 'flex';
-            loadChatRooms();
-        } else { alert("비밀번호 오류"); }
+            myId = id; localStorage.setItem('st_id', id); localStorage.setItem('st_pw', pw);
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('main-ui').style.display = 'block';
+            initVoIP(); loadRooms();
+        } else alert("정보가 일치하지 않습니다.");
     };
 
-    // [2] 단톡방 생성 핵심 로직
     window.createGroup = async () => {
-        const res = prompt("초대할 아이디들을 입력하세요 (쉼표 구분)\n예: user1, user2");
+        const res = prompt("초대할 아이디 (쉼표 구분):");
         if(!res) return;
-        let members = res.split(',').map(s => s.trim().toLowerCase()).filter(s => s !== "");
+        let members = res.split(',').map(s => s.trim().toLowerCase());
         members.push(myId);
-        members = [...new Set(members)];
-
-        const roomId = "room_" + Date.now();
-        const roomName = members.length > 2 ? `${members[0]} 외 ${members.length-1}명` : members.join(', ');
-
-        for(const m of members) {
-            await update(ref(db, `userRooms/${m}/${roomId}`), { name: roomName, members: members });
-        }
-        alert("방이 생성되었습니다!");
-        window.toggleMenu();
+        const rid = "room_" + Date.now();
+        for(const m of members) await set(ref(db, `userRooms/${m}/${rid}`), { name: members.join(', '), members });
+        window.toggleSidebar();
     };
 
-    // [3] 채팅 목록 로드
-    function loadChatRooms() {
+    function loadRooms() {
         onValue(ref(db, `userRooms/${myId}`), snap => {
-            const list = document.getElementById('chat-list'); list.innerHTML = "";
-            const rooms = snap.val();
-            if(rooms) Object.entries(rooms).forEach(([rid, info]) => {
+            const list = document.getElementById('room-list'); list.innerHTML = "";
+            if(snap.val()) Object.entries(snap.val()).forEach(([rid, info]) => {
                 const div = document.createElement('div');
                 div.className = "room-item";
-                div.innerHTML = `💬 ${info.name}`;
-                div.onclick = () => { window.enterChat(rid, info); window.toggleMenu(); };
+                div.innerHTML = `👤 ${info.name}`;
+                div.onclick = () => { window.enterChat(rid, info); window.toggleSidebar(); };
                 list.appendChild(div);
             });
         });
     }
 
-    // [4] 채팅방 입장 및 읽음 숫자 처리
     window.enterChat = (rid, info) => {
-        currentChatId = rid;
-        currentMembers = info.members;
+        currentChatId = rid; currentMembers = info.members;
         document.getElementById('chat-title').innerText = info.name;
-        
         onValue(ref(db, `msgs/${rid}`), snap => {
             const v = document.getElementById('chat-view'); v.innerHTML = "";
-            const data = snap.val();
-            if(!data) return;
-
-            Object.entries(data).forEach(([mid, m]) => {
-                // 실시간 읽음 업데이트
-                if (!m.readers || !m.readers[myId]) {
-                    update(ref(db, `msgs/${rid}/${mid}/readers`), { [myId]: true });
-                }
-
-                const readers = m.readers ? Object.keys(m.readers) : [];
-                const unreadList = currentMembers.filter(id => !readers.includes(id));
-                const unreadCount = unreadList.length;
+            if(snap.val()) Object.entries(snap.val()).forEach(([mid, m]) => {
+                if(!m.readers || !m.readers[myId]) update(ref(db, `msgs/${rid}/${mid}/readers`), {[myId]: true});
+                const unread = currentMembers.length - (m.readers ? Object.keys(m.readers).length : 0);
                 const isMe = m.s === myId;
-
-                const wrap = document.createElement('div');
-                wrap.className = `msg-wrap ${isMe ? 'me' : 'o'}`;
-                wrap.innerHTML = `
-                    <div class="bubble-row">
-                        <div class="bubble">${m.t}</div>
-                        ${unreadCount > 0 ? `<span class="unread-num" onclick="alert('안 읽은 사람: ${unreadList.join(', ')}')">${unreadCount}</span>` : ''}
+                const row = document.createElement('div');
+                row.className = `msg-row ${isMe ? 'me' : 'o'}`;
+                row.innerHTML = `
+                    <div class="profile-img"></div>
+                    <div class="msg-content">
+                        ${!isMe ? `<div class="user-name">${m.s}</div>` : ''}
+                        <div class="bubble-group">
+                            <div class="bubble">${m.t}</div>
+                            ${unread > 0 ? `<span class="unread">${unread}</span>` : ''}
+                        </div>
                     </div>
                 `;
-                v.appendChild(wrap);
+                v.appendChild(row);
             });
             v.scrollTop = v.scrollHeight;
         });
     };
 
-    // [5] 메시지 전송
     window.handleSend = () => {
         const i = document.getElementById('m-in');
         if(!i.value.trim() || !currentChatId) return;
-        push(ref(db, `msgs/${currentChatId}`), {
-            t: i.value, s: myId, readers: { [myId]: true }
-        });
+        push(ref(db, `msgs/${currentChatId}`), { t: i.value, s: myId, readers: {[myId]: true} });
         i.value = "";
     };
 
-    // [기타 기능]
-    window.toggleMenu = () => {
-        const menu = document.getElementById('side-menu');
-        const overlay = document.getElementById('overlay');
-        const isOpen = menu.classList.toggle('open');
-        overlay.style.display = isOpen ? 'block' : 'none';
-    };
+    window.toggleSidebar = () => document.getElementById('side-bar').classList.toggle('open');
     window.handleLogout = () => { localStorage.clear(); location.reload(); };
     window.addEventListener('load', () => {
         const sid = localStorage.getItem('st_id'), spw = localStorage.getItem('st_pw');
