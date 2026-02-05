@@ -2,56 +2,53 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>STAR TALK - ULTIMATE</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>STAR TALK MOBILE</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        :root { --sidebar: #2c2c2e; --chat-bg: #f4f4f7; --point: #fee500; }
-        body { margin: 0; font-family: sans-serif; background: #eee; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        
-        /* 상단 바 */
-        #auth-bar { background: #1a1a1a; padding: 10px 15px; display: none; gap: 10px; align-items: center; color: white; font-size: 11px; z-index: 10; }
-        .acc-btn { padding: 4px 12px; border-radius: 15px; border: 1px solid #444; cursor: pointer; background: #333; }
-        .acc-btn.active { border-color: var(--point); color: var(--point); font-weight: bold; }
+        :root { --point: #fee500; --bg: #f4f4f7; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; font-family: sans-serif; background: var(--bg); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-        /* 로그인 UI */
+        /* 모바일 대응 상단바 */
+        #auth-bar { background: #1a1a1a; padding: 10px; display: none; gap: 8px; overflow-x: auto; white-space: nowrap; color: white; }
+        .acc-btn { padding: 5px 12px; border-radius: 15px; border: 1px solid #444; font-size: 12px; }
+        .acc-btn.active { border-color: var(--point); color: var(--point); }
+
+        /* 로그인 레이어 */
         #login-ui { position: fixed; inset: 0; background: var(--point); z-index: 3000; display: flex; align-items: center; justify-content: center; }
-        .login-box { background: white; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; width: 280px; }
-        .login-box input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; outline: none; }
-        .login-box button { width: 100%; padding: 15px; background: #333; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .login-box { background: white; padding: 25px; border-radius: 20px; width: 85%; max-width: 300px; text-align: center; }
+        .login-box input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 10px; }
+        .login-box button { width: 100%; padding: 15px; background: #333; color: white; border: none; border-radius: 10px; font-weight: bold; }
 
-        /* 가로형 친구 목록 */
-        .story-container { background: white; padding: 15px; display: flex; gap: 15px; overflow-x: auto; border-bottom: 1px solid #eee; }
-        .story-item { flex: 0 0 auto; text-align: center; width: 60px; cursor: pointer; }
-        .story-img { width: 50px; height: 50px; border-radius: 20px; background: #eee; border: 2px solid var(--point); object-fit: cover; }
-        .story-name { font-size: 11px; margin-top: 5px; color: #333; }
+        /* 가로형 스토리 (친구 목록) */
+        .story-container { background: white; padding: 10px; display: flex; gap: 12px; overflow-x: auto; border-bottom: 1px solid #eee; }
+        .story-item { flex: 0 0 auto; width: 55px; text-align: center; font-size: 11px; }
+        .story-img { width: 45px; height: 45px; border-radius: 18px; background: #eee; border: 2px solid var(--point); }
 
-        /* 채팅 구역 */
-        main { flex: 1; display: flex; flex-direction: column; background: var(--chat-bg); }
-        header { padding: 15px 20px; background: white; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }
-        #chat-view { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { padding: 10px 14px; border-radius: 15px; max-width: 70%; font-size: 14px; }
+        /* 채팅 구역 - 모바일 키보드 대응 */
+        main { flex: 1; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+        header { padding: 12px 15px; background: white; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        #chat-view { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 8px; }
+        .msg { padding: 8px 12px; border-radius: 12px; max-width: 75%; font-size: 14px; word-break: break-all; }
         .me { align-self: flex-end; background: var(--point); }
         .o { align-self: flex-start; background: white; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-        
-        footer { padding: 15px; background: white; display: none; gap: 10px; border-top: 1px solid #eee; }
-        #m-in { flex: 1; border: none; background: #f0f0f2; padding: 12px; border-radius: 20px; outline: none; }
+
+        /* 입력창 고정 */
+        footer { padding: 10px; background: white; display: none; gap: 8px; border-top: 1px solid #eee; }
+        #m-in { flex: 1; border: none; background: #f0f0f2; padding: 10px 15px; border-radius: 20px; font-size: 14px; outline: none; }
     </style>
 </head>
 <body>
 
-<div id="auth-bar">
-    <span>계정:</span>
-    <div id="acc-list" style="display:flex; gap:8px;"></div>
-    <button onclick="localStorage.removeItem('lastUser'); location.reload();" style="margin-left:auto; background:none; border:none; color:#888; cursor:pointer;">로그아웃</button>
-</div>
+<div id="auth-bar"></div>
 
 <div id="login-ui">
     <div class="login-box">
-        <h2 style="margin-top:0;">STAR TALK</h2>
-        <input type="text" id="myId" placeholder="아이디">
+        <h3>STAR TALK</h3>
+        <input type="text" id="myId" placeholder="아이디 (영문/숫자)" inputmode="email">
         <input type="password" id="myPw" placeholder="비밀번호">
-        <button onclick="window.handleLogin()">로그인 시작</button>
+        <button onclick="window.handleLogin()">로그인</button>
     </div>
 </div>
 
@@ -60,12 +57,12 @@
 <main>
     <header>
         <b id="target-name">대상 선택</b>
-        <button onclick="window.handleAddFriend()">+ 친구추가</button>
+        <button onclick="window.handleAddFriend()" style="font-size:12px; padding:5px 10px;">+ 친구</button>
     </header>
     <div id="chat-view"></div>
     <footer id="chat-footer">
         <input type="text" id="m-in" placeholder="메시지..." onkeypress="if(event.keyCode==13) window.handleSend()">
-        <button onclick="window.handleSend()" style="border:none; background:none; font-weight:bold;">전송</button>
+        <button onclick="window.handleSend()" style="border:none; background:none; font-weight:bold; color:#333;">전송</button>
     </footer>
 </main>
 
@@ -73,7 +70,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, set, get, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // 1. 파이어베이스 설정 (본인의 정보로 꼭 확인하세요)
     const firebaseConfig = {
         apiKey: "AIzaSyAcBQ_Pyt4kdExDLGyNZJwWGbCdGDzVIjQ",
         authDomain: "starchet-e9630.firebaseapp.com",
@@ -88,84 +84,68 @@
     const db = getDatabase(app);
     let myId, targetId, peer;
 
-    // [전역 함수 등록] HTML 버튼에서 호출 가능하게 만듬
     window.handleLogin = async () => {
-        const id = document.getElementById('myId').value.trim();
+        const id = document.getElementById('myId').value.trim().toLowerCase();
         const pw = document.getElementById('myPw').value.trim();
-        if(!id || !pw) return alert("아이디와 비번을 입력하세요.");
+        if(!id || !pw) return alert("아이디와 비번을 확인하세요.");
 
-        try {
-            const snap = await get(ref(db, `auth/${id}`));
-            if(!snap.exists() || snap.val().pw === pw) {
-                if(!snap.exists()) await set(ref(db, `auth/${id}`), {pw, nick: id});
-                
-                // 계정 정보 로컬 저장
-                let accs = JSON.parse(localStorage.getItem('accounts') || '{}');
-                accs[id] = pw;
-                localStorage.setItem('accounts', JSON.stringify(accs));
-                localStorage.setItem('lastUser', id);
-                
-                startApp(id);
-            } else {
-                alert("비밀번호가 일치하지 않습니다.");
-            }
-        } catch (e) {
-            alert("서버 연결 실패! Firebase 규칙을 확인하세요.");
-            console.error(e);
-        }
+        const snap = await get(ref(db, `auth/${id}`));
+        if(!snap.exists() || snap.val().pw === pw) {
+            if(!snap.exists()) await set(ref(db, `auth/${id}`), {pw, nick: id});
+            localStorage.setItem('lastUser', id);
+            let accs = JSON.parse(localStorage.getItem('accounts') || '{}');
+            accs[id] = pw;
+            localStorage.setItem('accounts', JSON.stringify(accs));
+            startApp(id);
+        } else alert("비밀번호 오류");
     };
 
     function startApp(id) {
         myId = id;
-        peer = new Peer(myId);
+        // [모바일 연결 강화] 구글 STUN 서버 추가
+        peer = new Peer(myId, {
+            config: {'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }]}
+        });
         
         peer.on('open', () => {
             document.getElementById('login-ui').style.display = 'none';
             document.getElementById('auth-bar').style.display = 'flex';
-            updateAccUI();
-            loadFriends();
+            updateUI();
+            loadList();
         });
 
-        peer.on('error', (err) => {
-            if(err.type === 'unavailable-id') {
-                alert("이 아이디는 현재 접속 중입니다. 잠시 후 다시 시도하세요.");
-            } else {
-                alert("오류 발생: " + err.type);
-            }
+        peer.on('error', (e) => {
+            alert("연결 중... 아이디 중복 혹은 네트워크 문제입니다.");
             location.reload();
         });
     }
 
-    function updateAccUI() {
-        const list = document.getElementById('acc-list');
+    function updateUI() {
+        const bar = document.getElementById('auth-bar');
         const accs = JSON.parse(localStorage.getItem('accounts') || '{}');
-        list.innerHTML = "";
+        bar.innerHTML = "";
         Object.keys(accs).forEach(aid => {
-            const btn = document.createElement('div');
-            btn.className = `acc-btn ${aid === myId ? 'active' : ''}`;
-            btn.innerText = aid;
-            btn.onclick = () => { localStorage.setItem('lastUser', aid); location.reload(); };
-            list.appendChild(btn);
+            const active = aid === myId ? 'active' : '';
+            bar.innerHTML += `<span class="acc-btn ${active}" onclick="localStorage.setItem('lastUser','${aid}'); location.reload();">${aid}</span>`;
         });
+        bar.innerHTML += `<span onclick="localStorage.clear(); location.reload();" style="color:#666; font-size:10px;">[초기화]</span>`;
     }
 
     window.handleAddFriend = async () => {
-        const fid = prompt("친구 ID:");
+        const fid = prompt("친구 아이디:").toLowerCase();
         if(!fid || fid === myId) return;
         const check = await get(ref(db, `auth/${fid}`));
-        if(check.exists()) {
-            await set(ref(db, `users/${myId}/f/${fid}`), {id: fid});
-            alert("친구 추가됨!");
-        } else alert("존재하지 않는 사용자입니다.");
+        if(check.exists()) set(ref(db, `users/${myId}/f/${fid}`), {id: fid});
+        else alert("존재하지 않는 아이디입니다.");
     };
 
-    function loadFriends() {
+    function loadList() {
         onValue(ref(db, `users/${myId}/f`), snap => {
             const area = document.getElementById('story-area');
             area.innerHTML = "";
             if(snap.val()) Object.keys(snap.val()).forEach(fid => {
                 area.innerHTML += `
-                    <div class="story-item" onclick="window.handleOpenChat('${fid}')">
+                    <div class="story-item" onclick="window.handleOpen('${fid}')">
                         <div class="story-img"></div>
                         <div class="story-name">${fid}</div>
                     </div>`;
@@ -173,7 +153,7 @@
         });
     }
 
-    window.handleOpenChat = (fid) => {
+    window.handleOpen = (fid) => {
         targetId = fid;
         document.getElementById('target-name').innerText = fid;
         document.getElementById('chat-footer').style.display = 'flex';
@@ -193,9 +173,10 @@
         const rid = [myId, targetId].sort().join("_");
         push(ref(db, `msgs/${rid}`), {t: i.value, s: myId});
         i.value = "";
+        // 전송 후 키보드 안닫히게 포커스 유지
+        document.getElementById('m-in').focus();
     };
 
-    // 자동 로그인 체크
     const last = localStorage.getItem('lastUser');
     if(last) startApp(last);
 </script>
