@@ -3,38 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>STAR TALK AUTO-LOGIN</title>
+    <title>STAR TALK FINAL</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        :root { --bg: #ffffff; --side: #1a1a1a; --yellow: #fee500; }
+        :root { --bg: #ffffff; --side: #1a1a1a; --yellow: #fee500; --accent: #ff3b30; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
         body, html { height: 100%; width: 100%; overflow: hidden; background: var(--bg); }
 
-        /* [로그인 UI] */
-        #login-ui { position: fixed; inset: 0; background: #fff; z-index: 5000; display: flex; align-items: center; justify-content: center; }
-        .login-box { width: 280px; display: flex; flex-direction: column; gap: 10px; }
-        .login-box input { padding: 15px; border: 1px solid #eee; border-radius: 12px; outline: none; }
-        .login-box button { padding: 15px; background: #000; color: #fff; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
+        /* [통합 인증 화면] */
+        #auth-ui { position: fixed; inset: 0; background: #fff; z-index: 5000; display: flex; align-items: center; justify-content: center; }
+        .auth-box { width: 300px; display: flex; flex-direction: column; gap: 12px; }
+        .auth-box h2 { text-align: center; margin-bottom: 10px; letter-spacing: -1px; }
+        .auth-box input { padding: 15px; border: 1px solid #eee; border-radius: 12px; outline: none; font-size: 14px; }
+        .auth-box button { padding: 15px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
+        .btn-main { background: #000; color: #fff; }
+        .btn-sub { background: #f5f5f5; color: #333; margin-top: 5px; }
 
-        /* [메인 레이아웃] */
+        /* [메인 앱 레이아웃] */
         #main-app { display: none; height: 100%; width: 100%; }
         nav { width: 70px; background: var(--side); display: flex; flex-direction: column; align-items: center; padding: 25px 0; gap: 25px; }
         .nav-item { color: #666; cursor: pointer; font-size: 22px; }
         .nav-item.active { color: #fff; }
-        .content-panel { flex: 1; display: none; flex-direction: column; background: #fff; }
+
+        .content-panel { flex: 1; display: none; flex-direction: column; background: #fff; position: relative; }
         .content-panel.active { display: flex; }
-        
-        .header { padding: 20px; font-weight: bold; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
+        .header { padding: 20px; font-weight: bold; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+
+        /* 프로필 감성 (카톡 스타일) */
+        .k-profile { position: absolute; inset: 0; background: #848b94; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 60px; z-index: 10; }
+        .k-p-img { width: 100px; height: 100px; border-radius: 35px; background: #eee; margin-bottom: 15px; object-fit: cover; }
     </style>
 </head>
 <body>
 
-<div id="login-ui">
-    <div class="login-box">
-        <h2 style="text-align:center; margin-bottom:10px;">STAR TALK</h2>
-        <input type="text" id="myId" placeholder="아이디">
-        <input type="password" id="myPw" placeholder="비밀번호 (선택사항)">
-        <button onclick="window.doLogin()">로그인 및 자동로그인 설정</button>
+<div id="auth-ui">
+    <div id="login-form" class="auth-box">
+        <h2>STAR TALK</h2>
+        <input type="text" id="loginId" placeholder="아이디">
+        <input type="password" id="loginPw" placeholder="비밀번호">
+        <button class="btn-main" onclick="window.handleLogin()">로그인</button>
+        <button class="btn-sub" onclick="window.toggleAuth('signup')">새 계정 만들기</button>
+    </div>
+
+    <div id="signup-form" class="auth-box" style="display:none;">
+        <h2>회원가입</h2>
+        <input type="text" id="regId" placeholder="사용할 아이디">
+        <input type="password" id="regPw" placeholder="비밀번호">
+        <input type="text" id="regName" placeholder="이름(닉네임)">
+        <button class="btn-main" onclick="window.handleSignup()" style="background:var(--yellow); color:#000;">가입 완료</button>
+        <button class="btn-sub" onclick="window.toggleAuth('login')">이미 계정이 있나요? 로그인</button>
     </div>
 </div>
 
@@ -45,97 +62,122 @@
     </nav>
 
     <div id="panel-friend" class="content-panel active">
-        <div class="header">친구 <span onclick="window.addFriend()" style="cursor:pointer;">➕</span></div>
+        <div class="header">친구 <span onclick="window.addFriend()" style="cursor:pointer; font-size:20px;">+</span></div>
         <div id="friend-list"></div>
     </div>
 
     <div id="panel-profile" class="content-panel">
-        <div class="header">설정</div>
-        <div style="padding:40px; text-align:center;">
-            <div id="my-id-view" style="font-size:18px; font-weight:bold; margin-bottom:20px;"></div>
-            <button onclick="window.doLogout()" style="padding:15px 30px; background:#ff3b30; color:#fff; border:none; border-radius:12px; font-weight:bold;">로그아웃 (자동로그인 해제)</button>
+        <div class="k-profile">
+            <img id="my-p-img" class="k-p-img" src="https://via.placeholder.com/150">
+            <h3 id="my-p-name" style="margin-bottom:40px;">사용자</h3>
+            <button onclick="window.doLogout()" style="background:rgba(255,255,255,0.2); border:none; color:#fff; padding:10px 20px; border-radius:8px;">로그아웃</button>
         </div>
     </div>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, get, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, set, get, update, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = { apiKey: "AIzaSyAcBQ_Pyt4kdExDLGyNZJwWGbCdGDzVIjQ", databaseURL: "https://starchet-e9630-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "starchet-e9630" };
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     let myId, peer;
 
-    // [핵심: 페이지 로드 시 자동 로그인 확인]
-    window.addEventListener('load', () => {
+    // [페이지 로드 시 자동 로그인 확인]
+    window.onload = () => {
         const savedId = localStorage.getItem('st_auto_id');
         if (savedId) {
-            console.log("자동 로그인 시도:", savedId);
             myId = savedId;
             startApp();
         }
-    });
-
-    // [로그인 버튼 클릭 시]
-    window.doLogin = () => {
-        const idInput = document.getElementById('myId').value.trim().toLowerCase();
-        if (!idInput) {
-            alert("아이디를 입력해주세요.");
-            return;
-        }
-        
-        myId = idInput;
-        // 브라우저에 아이디 저장 (자동 로그인 핵심)
-        localStorage.setItem('st_auto_id', myId);
-        startApp();
     };
 
-    // [앱 시작 로직]
+    // [화면 전환 로직]
+    window.toggleAuth = (mode) => {
+        document.getElementById('login-form').style.display = mode === 'login' ? 'flex' : 'none';
+        document.getElementById('signup-form').style.display = mode === 'signup' ? 'flex' : 'none';
+    };
+
+    // [회원가입 처리]
+    window.handleSignup = async () => {
+        const id = document.getElementById('regId').value.trim().toLowerCase();
+        const pw = document.getElementById('regPw').value.trim();
+        const name = document.getElementById('regName').value.trim();
+
+        if (!id || !pw || !name) return alert("모든 항목을 입력해주세요.");
+
+        const userRef = ref(db, `users/${id}`);
+        const snap = await get(userRef);
+        
+        if (snap.exists()) {
+            alert("이미 존재하는 아이디입니다.");
+        } else {
+            await set(userRef, { pw, name, id });
+            alert("가입이 완료되었습니다! 로그인해주세요.");
+            window.toggleAuth('login');
+        }
+    };
+
+    // [로그인 처리]
+    window.handleLogin = async () => {
+        const id = document.getElementById('loginId').value.trim().toLowerCase();
+        const pw = document.getElementById('loginPw').value.trim();
+
+        const userRef = ref(db, `users/${id}`);
+        const snap = await get(userRef);
+
+        if (snap.exists() && snap.val().pw === pw) {
+            myId = id;
+            localStorage.setItem('st_auto_id', myId); // 자동 로그인 저장
+            startApp();
+        } else {
+            alert("아이디 또는 비밀번호가 틀렸습니다.");
+        }
+    };
+
     function startApp() {
-        document.getElementById('login-ui').style.display = 'none';
+        document.getElementById('auth-ui').style.display = 'none';
         document.getElementById('main-app').style.display = 'flex';
-        document.getElementById('my-id-view').innerText = `내 아이디: ${myId}`;
         
-        // PeerJS 초기화
+        // 내 정보 로드
+        onValue(ref(db, `users/${myId}`), snap => {
+            if(snap.exists()){
+                document.getElementById('my-p-name').innerText = snap.val().name;
+            }
+        });
+
         peer = new Peer(myId);
-        
-        // 친구 목록 로드
         loadFriends();
     }
 
-    // [로그아웃: 자동 로그인 해제]
-    window.doLogout = () => {
-        if(confirm("로그아웃 하시겠습니까? 다음 접속 시 다시 로그인해야 합니다.")) {
-            localStorage.removeItem('st_auto_id'); // 자동 로그인 정보 삭제
-            location.reload(); // 페이지 새로고침하여 로그인 화면으로 이동
-        }
-    };
-
-    // 친구 기능
-    function loadFriends() {
-        onValue(ref(db, `friends/${myId}`), snap => {
-            const list = document.getElementById('friend-list');
-            list.innerHTML = "";
-            if(snap.val()) {
-                Object.keys(snap.val()).forEach(fid => {
-                    const d = document.createElement('div');
-                    d.style = "padding:15px; border-bottom:1px solid #eee;";
-                    d.innerHTML = `<b>${fid}</b>`;
-                    list.appendChild(d);
-                });
-            }
-        });
-    }
-
+    // [친구 및 설정 로직]
     window.addFriend = () => {
-        const fid = prompt("친구 ID:").trim().toLowerCase();
+        const fid = prompt("추가할 친구 ID:").trim().toLowerCase();
         if(fid && fid !== myId) {
             update(ref(db), {
                 [`friends/${myId}/${fid}`]: {id: fid},
                 [`friends/${fid}/${myId}`]: {id: myId}
             });
         }
+    };
+
+    function loadFriends() {
+        onValue(ref(db, `friends/${myId}`), snap => {
+            const list = document.getElementById('friend-list');
+            list.innerHTML = "";
+            if(snap.val()) Object.keys(snap.val()).forEach(fid => {
+                const d = document.createElement('div');
+                d.style = "padding:15px; border-bottom:1px solid #eee; cursor:pointer;";
+                d.innerHTML = `<b>${fid}</b>`;
+                list.appendChild(d);
+            });
+        });
+    }
+
+    window.doLogout = () => {
+        localStorage.removeItem('st_auto_id');
+        location.reload();
     };
 
     window.showPanel = (t, el) => {
