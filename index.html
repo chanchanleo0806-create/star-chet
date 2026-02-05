@@ -2,122 +2,129 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>STAR TALK - Minimalist</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>STAR TALK</title>
     <style>
-        :root { --side: #111; --list: #fff; --chat: #f9f9f9; --accent: #000; }
+        :root { --bg: #ffffff; --side: #1a1a1a; --text: #000000; --gray: #f4f4f4; --line: #eeeeee; }
         * { box-sizing: border-box; font-family: -apple-system, sans-serif; margin: 0; padding: 0; }
-        body, html { height: 100%; overflow: hidden; background: #000; }
+        body, html { height: 100%; width: 100%; overflow: hidden; background: var(--bg); }
 
-        #app-container { display: flex; height: 100%; width: 100%; }
-
-        /* [Side Bar] */
-        #side-bar { width: 60px; background: var(--side); display: flex; flex-direction: column; align-items: center; padding-top: 30px; gap: 30px; }
-        .side-icon { color: #555; font-size: 20px; cursor: pointer; }
-        .side-icon.active { color: #fff; }
-
-        /* [List Area] */
-        #room-section { width: 280px; background: var(--list); border-right: 1px solid #eee; display: flex; flex-direction: column; }
-        .list-header { padding: 25px 20px; font-size: 20px; font-weight: 800; display: flex; justify-content: space-between; }
-        .room-item { padding: 12px 20px; display: flex; align-items: center; gap: 12px; cursor: pointer; }
-        .room-item:hover { background: #f5f5f5; }
-        .room-img { width: 45px; height: 45px; background: #eee; border-radius: 18px; overflow: hidden; }
-
-        /* [Chat Area] */
-        #chat-section { flex: 1; background: var(--chat); display: flex; flex-direction: column; }
-        header { height: 60px; background: #fff; display: flex; align-items: center; padding: 0 20px; border-bottom: 1px solid #eee; font-weight: bold; }
-        #chat-view { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+        /* [Main Layout] */
+        #app { display: flex; height: 100%; width: 100%; }
         
-        /* [Profile Overlay - 카톡 프로필 창 스타일] */
-        #profile-overlay {
-            position: fixed; inset: 0; background: #2c2c2c; z-index: 2000;
-            display: none; flex-direction: column; align-items: center; justify-content: space-between;
-            color: #fff; padding: 60px 0;
-        }
-        .close-profile { position: absolute; top: 20px; left: 20px; font-size: 24px; cursor: pointer; }
-        .profile-main { text-align: center; }
-        .large-img { width: 100px; height: 100px; background: #eee; border-radius: 35px; margin-bottom: 15px; }
-        .profile-name { font-size: 20px; font-weight: bold; }
+        /* [Side Bar] */
+        nav { width: 65px; background: var(--side); display: flex; flex-direction: column; align-items: center; padding-top: 30px; gap: 30px; flex-shrink: 0; }
+        .s-icon { color: #555; font-size: 22px; cursor: pointer; }
+        .s-icon.active { color: #fff; }
 
-        .profile-footer {
-            width: 100%; max-width: 300px; display: flex; justify-content: space-around;
-            border-top: 1px solid rgba(255,255,255,0.1); padding-top: 30px;
-        }
-        .p-btn { display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; font-size: 12px; color: #ccc; }
+        /* [Friend List Area] */
+        #list-container { flex: 1; display: flex; flex-direction: column; background: #fff; border-right: 1px solid var(--line); }
+        .header-title { padding: 20px; font-size: 22px; font-weight: 800; }
+        
+        /* 내 프로필 영역 */
+        #my-profile-section { padding: 15px 20px; display: flex; align-items: center; gap: 15px; cursor: pointer; }
+        .p-img { width: 55px; height: 55px; background: var(--gray); border-radius: 20px; flex-shrink: 0; }
+        .p-info { display: flex; flex-direction: column; gap: 4px; }
+        .p-name { font-weight: bold; font-size: 16px; }
+        .p-msg { font-size: 13px; color: #888; }
+        
+        .hr-line { margin: 10px 20px; border: 0; border-top: 1px solid var(--line); }
+
+        /* 친구 목록 */
+        #room-list { flex: 1; overflow-y: auto; padding-top: 10px; }
+        .friend-item { padding: 10px 20px; display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        .friend-item:hover { background: var(--gray); }
+        .f-img { width: 45px; height: 45px; background: var(--gray); border-radius: 17px; }
+
+        /* [Chat Window - 초기 숨김] */
+        #chat-window { position: absolute; inset: 0 0 0 65px; background: #fff; z-index: 100; display: none; flex-direction: column; }
+        #chat-window.open { display: flex; }
+        
+        .c-header { height: 60px; border-bottom: 1px solid var(--line); display: flex; align-items: center; padding: 0 20px; justify-content: space-between; }
+        #chat-view { flex: 1; overflow-y: auto; padding: 20px; background: #fdfdfd; display: flex; flex-direction: column; gap: 10px; }
+        .c-input-area { padding: 15px; border-top: 1px solid var(--line); display: flex; gap: 10px; }
+        
+        /* [Profile Overlay] */
+        #profile-overlay { position: fixed; inset: 0; background: #1a1a1a; z-index: 1000; display: none; flex-direction: column; align-items: center; justify-content: center; color: #fff; }
+        .close-p { position: absolute; top: 30px; left: 30px; font-size: 24px; cursor: pointer; }
+        .p-footer { width: 100%; max-width: 300px; display: flex; justify-content: space-around; margin-top: 100px; border-top: 1px solid #333; padding-top: 30px; }
+        .p-btn { text-align: center; cursor: pointer; color: #aaa; }
         .p-btn:hover { color: #fff; }
-        .p-btn-icon { font-size: 22px; }
-
-        /* [Login UI] */
-        #login-ui { position: fixed; inset: 0; background: #fff; z-index: 5000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .l-box { width: 300px; display: flex; flex-direction: column; gap: 10px; }
-        .l-input { padding: 12px; border: 1px solid #eee; border-radius: 8px; outline: none; }
-        .l-btn { padding: 12px; background: #000; color: #fff; border: none; border-radius: 8px; font-weight: bold; }
 
         /* [Bubbles] */
-        .bubble { padding: 8px 12px; border-radius: 12px; font-size: 14px; max-width: 70%; }
+        .bubble { padding: 8px 14px; border-radius: 15px; font-size: 14px; max-width: 70%; line-height: 1.5; }
         .me { align-self: flex-end; background: #000; color: #fff; }
-        .o { align-self: flex-start; background: #fff; border: 1px solid #eee; }
+        .o { align-self: flex-start; background: var(--gray); color: #000; }
+
+        /* [Login] */
+        #login-screen { position: fixed; inset: 0; background: #000; z-index: 5000; display: flex; align-items: center; justify-content: center; }
+        .l-box { width: 320px; background: #fff; padding: 40px; border-radius: 15px; display: flex; flex-direction: column; gap: 15px; }
+        .l-input { padding: 12px; border: 1px solid #ddd; border-radius: 8px; outline: none; }
     </style>
 </head>
 <body>
 
-    <div id="login-ui">
-        <div class="l-box">
-            <h1 style="text-align:center; margin-bottom:30px;">STAR TALK</h1>
-            <input type="text" id="myId" class="l-input" placeholder="ID">
-            <input type="password" id="myPw" class="l-input" placeholder="Password">
-            <button class="l-btn" onclick="window.handleLogin()">로그인</button>
+<div id="login-screen">
+    <div class="l-box">
+        <h2 style="text-align:center; margin-bottom:20px;">STAR TALK</h2>
+        <input type="text" id="myId" class="l-input" placeholder="ID">
+        <input type="password" id="myPw" class="l-input" placeholder="Password">
+        <button onclick="window.handleLogin()" style="padding:12px; background:#000; color:#fff; border:none; border-radius:8px; font-weight:bold;">로그인</button>
+    </div>
+</div>
+
+<div id="profile-overlay">
+    <span class="close-p" onclick="window.closeProfile()">✕</span>
+    <div style="width:100px; height:100px; background:#444; border-radius:40px; margin-bottom:20px;"></div>
+    <h2 id="p-detail-name">이름</h2>
+    <p style="color:#888; margin-top:10px;">상태 메시지 없음</p>
+    <div class="p-footer">
+        <div class="p-btn" id="go-chat-btn"><div>💬</div><div style="font-size:12px; margin-top:5px;">채팅</div></div>
+        <div class="p-btn"><div>📞</div><div style="font-size:12px; margin-top:5px;">전화</div></div>
+        <div class="p-btn"><div>🎥</div><div style="font-size:12px; margin-top:5px;">영상통화</div></div>
+    </div>
+</div>
+
+<div id="app">
+    <nav>
+        <div class="s-icon active">👤</div>
+        <div class="s-icon">💬</div>
+        <div class="s-icon" style="margin-top:auto; margin-bottom:30px;" onclick="location.reload()">🚪</div>
+    </nav>
+
+    <div id="list-container">
+        <div class="header-title">친구</div>
+        
+        <div id="my-profile-section">
+            <div class="p-img"></div>
+            <div class="p-info">
+                <span class="p-name" id="my-name-display">나</span>
+                <span class="p-msg">상태 메시지를 입력하세요</span>
+            </div>
         </div>
+
+        <hr class="hr-line">
+
+        <div id="room-list"></div>
     </div>
 
-    <div id="profile-overlay">
-        <div class="close-profile" onclick="window.closeProfile()">✕</div>
-        <div class="profile-main">
-            <div class="large-img"></div>
-            <div class="profile-name" id="p-name-detail">사용자 이름</div>
-            <div style="font-size:13px; color:#aaa; margin-top:5px;">나만의 상태 메시지</div>
+    <div id="chat-window">
+        <div class="c-header">
+            <span style="cursor:pointer; font-weight:bold;" onclick="window.closeChat()">◀</span>
+            <b id="chat-target-name">이름</b>
+            <span style="color:#999;">🔍 ⋮</span>
         </div>
-        <div class="profile-footer">
-            <div class="p-btn" id="start-chat-btn">
-                <span class="p-btn-icon">💬</span>
-                <span>채팅</span>
-            </div>
-            <div class="p-btn" onclick="alert('전화 연결 중...')">
-                <span class="p-btn-icon">📞</span>
-                <span>전화</span>
-            </div>
-            <div class="p-btn" onclick="alert('영상통화 연결 중...')">
-                <span class="p-btn-icon">🎥</span>
-                <span>영상통화</span>
-            </div>
+        <div id="chat-view"></div>
+        <div class="c-input-area">
+            <input type="text" id="m-in" style="flex:1; padding:10px; border:1px solid #ddd; border-radius:20px; outline:none;" placeholder="메시지 입력..." onkeypress="if(event.keyCode==13) window.handleSend()">
+            <button onclick="window.handleSend()" style="padding:10px 20px; background:#000; color:#fff; border:none; border-radius:20px;">전송</button>
         </div>
     </div>
-
-    <div id="app-container">
-        <div id="side-bar">
-            <div class="side-icon active">👤</div>
-            <div class="side-icon">💬</div>
-            <div class="side-icon" style="margin-top:auto; margin-bottom:30px;" onclick="location.reload()">⇥</div>
-        </div>
-
-        <div id="room-section">
-            <div class="list-header">친구 <span style="cursor:pointer" onclick="window.createGroup()">+</span></div>
-            <div id="room-list"></div>
-        </div>
-
-        <div id="chat-section">
-            <header id="chat-title">방을 선택하세요</header>
-            <div id="chat-view"></div>
-            <div style="padding:15px; background:#fff; display:flex; gap:10px;">
-                <input type="text" id="m-in" style="flex:1; padding:10px; border:1px solid #eee; border-radius:5px; outline:none;" placeholder="메시지 입력..." onkeypress="if(event.keyCode==13) window.handleSend()">
-                <button onclick="window.handleSend()" style="padding:10px 20px; background:#000; color:#fff; border:none; border-radius:5px;">전송</button>
-            </div>
-        </div>
-    </div>
+</div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, get, push, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, set, get, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyAcBQ_Pyt4kdExDLGyNZJwWGbCdGDzVIjQ",
@@ -129,71 +136,63 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    let myId, currentChatId, currentMembers = [];
+    let myId, currentChatId;
 
-    // 로그인
     window.handleLogin = async () => {
         const id = document.getElementById('myId').value.trim().toLowerCase();
-        const pw = document.getElementById('myPw').value.trim();
-        if(!id || !pw) return;
+        if(!id) return;
         myId = id;
-        document.getElementById('login-ui').style.display = 'none';
-        loadRooms();
+        document.getElementById('my-name-display').innerText = id;
+        document.getElementById('login-screen').style.display = 'none';
+        loadFriends();
     };
 
-    // 친구(방) 목록 클릭 시 프로필 띄우기
+    function loadFriends() {
+        onValue(ref(db, `userRooms/${myId}`), snap => {
+            const list = document.getElementById('room-list'); list.innerHTML = "";
+            if(snap.val()) Object.entries(snap.val()).forEach(([rid, info]) => {
+                const div = document.createElement('div');
+                div.className = "friend-item";
+                div.innerHTML = `<div class="f-img"></div><div class="p-name">${info.name}</div>`;
+                div.onclick = () => window.openProfile(rid, info);
+                list.appendChild(div);
+            });
+        });
+        // 임시 친구 추가 기능 (테스트용)
+        if(confirm("테스트 친구를 추가할까요?")) {
+            const tid = prompt("친구 ID:");
+            if(tid) set(ref(db, `userRooms/${myId}/room_1`), { name: tid, members: [myId, tid] });
+        }
+    }
+
     window.openProfile = (rid, info) => {
-        const overlay = document.getElementById('profile-overlay');
-        document.getElementById('p-name-detail').innerText = info.name;
-        overlay.style.display = 'flex';
-        
-        // 프로필 창 내 '채팅' 버튼 클릭 시
-        document.getElementById('start-chat-btn').onclick = () => {
+        document.getElementById('p-detail-name').innerText = info.name;
+        document.getElementById('profile-overlay').style.display = 'flex';
+        document.getElementById('go-chat-btn').onclick = () => {
             window.enterChat(rid, info);
             window.closeProfile();
         };
     };
 
-    window.closeProfile = () => {
-        document.getElementById('profile-overlay').style.display = 'none';
-    };
-
-    window.createGroup = async () => {
-        const res = prompt("초대할 ID:");
-        if(!res) return;
-        const rid = "room_" + Date.now();
-        const members = [myId, res];
-        for(const m of members) await set(ref(db, `userRooms/${m}/${rid}`), { name: res, members });
-    };
-
-    function loadRooms() {
-        onValue(ref(db, `userRooms/${myId}`), snap => {
-            const list = document.getElementById('room-list'); list.innerHTML = "";
-            if(snap.val()) Object.entries(snap.val()).forEach(([rid, info]) => {
-                const div = document.createElement('div');
-                div.className = "room-item";
-                div.innerHTML = `<div class="room-img"></div><div><b>${info.name}</b></div>`;
-                div.onclick = () => window.openProfile(rid, info); // 클릭 시 프로필 먼저
-                list.appendChild(div);
-            });
-        });
-    }
+    window.closeProfile = () => document.getElementById('profile-overlay').style.display = 'none';
 
     window.enterChat = (rid, info) => {
-        currentChatId = rid; currentMembers = info.members;
-        document.getElementById('chat-title').innerText = info.name;
+        currentChatId = rid;
+        document.getElementById('chat-target-name').innerText = info.name;
+        document.getElementById('chat-window').classList.add('open');
         onValue(ref(db, `msgs/${rid}`), snap => {
             const v = document.getElementById('chat-view'); v.innerHTML = "";
             if(snap.val()) Object.entries(snap.val()).forEach(([mid, m]) => {
-                const isMe = m.s === myId;
-                const div = document.createElement('div');
-                div.className = `bubble ${isMe ? 'me' : 'o'}`;
-                div.innerText = m.t;
-                v.appendChild(div);
+                const d = document.createElement('div');
+                d.className = `bubble ${m.s === myId ? 'me' : 'o'}`;
+                d.innerText = m.t;
+                v.appendChild(d);
             });
             v.scrollTop = v.scrollHeight;
         });
     };
+
+    window.closeChat = () => document.getElementById('chat-window').classList.remove('open');
 
     window.handleSend = () => {
         const i = document.getElementById('m-in');
