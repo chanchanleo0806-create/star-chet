@@ -3,185 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>STAR TALK - SIMPLE</title>
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <title>STAR TALK - SERVICE GUIDE</title>
     <style>
-        :root { --point: #fee500; --bg: #f4f4f7; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; font-family: sans-serif; background: var(--bg); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        :root { --blue: #2189ff; --gray: #757575; --line: #eeeeee; }
+        body { margin: 0; font-family: 'SamsungOne', 'Malgun Gothic', sans-serif; background: #fff; color: #333; }
 
-        /* 로그인 UI */
-        #login-ui { position: fixed; inset: 0; background: var(--point); z-index: 3000; display: flex; align-items: center; justify-content: center; }
-        .login-box { background: white; padding: 25px; border-radius: 20px; width: 85%; max-width: 320px; text-align: center; }
-        .login-box input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; outline: none; }
-        .login-box button { width: 100%; padding: 15px; background: #333; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        /* 가이드 컨테이너 */
+        .guide-container { padding: 20px; max-width: 500px; margin: 0 auto; }
+        .guide-header { border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 25px; }
+        .guide-header h1 { font-size: 22px; margin: 0; letter-spacing: -1px; }
 
-        /* 헤더 */
-        header { padding: 15px; background: white; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
-        .btn-group { display: flex; gap: 8px; }
-        .call-btn { background: #4cd964; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; font-size: 16px; cursor: pointer; display: none; align-items: center; justify-content: center; }
+        /* 단계별 리스트 (삼성 서비스 스타일) */
+        .step-item { display: flex; align-items: flex-start; padding: 20px 0; border-bottom: 1px solid var(--line); }
+        .step-icon { width: 60px; height: 60px; flex-shrink: 0; background: #f8f9fb; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 30px; margin-right: 15px; }
+        .step-content { flex: 1; }
+        .step-num { font-size: 13px; font-weight: bold; color: var(--blue); margin-bottom: 4px; display: block; }
+        .step-text { font-size: 15px; font-weight: 500; line-height: 1.4; margin-bottom: 8px; }
+        .step-desc { font-size: 13px; color: var(--gray); line-height: 1.5; }
 
-        /* 친구 목록 */
-        .story-container { background: white; padding: 10px; display: flex; gap: 12px; overflow-x: auto; border-bottom: 1px solid #eee; min-height: 80px; }
-        .story-item { flex: 0 0 auto; width: 55px; text-align: center; cursor: pointer; }
-        .story-img { width: 45px; height: 45px; border-radius: 18px; background: #eee; border: 2px solid var(--point); margin-bottom: 4px; }
-        .story-name { font-size: 11px; color: #333; }
-
-        /* 채팅 구역 */
-        #chat-view { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { padding: 10px 14px; border-radius: 15px; max-width: 75%; font-size: 15px; word-break: break-all; }
-        .me { align-self: flex-end; background: var(--point); border-top-right-radius: 2px; }
-        .o { align-self: flex-start; background: white; border-top-left-radius: 2px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-        .file-img { max-width: 100%; border-radius: 10px; margin-top: 5px; }
-
-        /* 하단 입력바 */
-        footer { padding: 10px; background: white; display: none; gap: 8px; border-top: 1px solid #eee; align-items: center; }
-        #m-in { flex: 1; border: none; background: #f0f0f2; padding: 12px; border-radius: 20px; outline: none; font-size: 16px; }
-        .icon-btn { font-size: 20px; cursor: pointer; }
-        #file-input { display: none; }
+        /* 입력창 및 버튼 */
+        .input-group { margin-top: 15px; }
+        .input-group input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 8px; font-size: 14px; box-sizing: border-box; }
+        .btn-confirm { width: 100%; padding: 15px; background: #000; color: #fff; border: none; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 10px; }
+        
+        /* 채팅 화면 전환 */
+        #main-app { display: none; }
     </style>
 </head>
 <body>
 
-<div id="login-ui">
-    <div class="login-box">
-        <h2>STAR TALK</h2>
-        <input type="text" id="myId" placeholder="아이디" inputmode="email">
-        <input type="password" id="myPw" placeholder="비밀번호">
-        <button onclick="window.handleLogin()">로그인</button>
+<div id="login-ui" class="guide-container">
+    <div class="guide-header">
+        <h1>서비스 이용 안내</h1>
     </div>
+
+    <div class="step-item">
+        <div class="step-icon">👤</div>
+        <div class="step-content">
+            <span class="step-num">Step 1</span>
+            <div class="step-text">계정 정보를 입력해 주세요.</div>
+            <div class="step-desc">본인 확인을 위한 아이디와 비밀번호가 필요합니다.</div>
+            <div class="input-group">
+                <input type="text" id="myId" placeholder="아이디 입력" inputmode="email">
+                <input type="password" id="myPw" placeholder="비밀번호 입력">
+            </div>
+        </div>
+    </div>
+
+    <div class="step-item">
+        <div class="step-icon">🔔</div>
+        <div class="step-content">
+            <span class="step-num">Step 2</span>
+            <div class="step-text">알림 및 권한을 허용해 주세요.</div>
+            <div class="step-desc">메시지 수신 시 상단 알림창에 내용이 표시됩니다.</div>
+        </div>
+    </div>
+
+    <div class="step-item">
+        <div class="step-icon">💬</div>
+        <div class="step-content">
+            <span class="step-num">Step 3</span>
+            <div class="step-text">친구 추가 후 대화를 시작하세요.</div>
+            <div class="step-desc">상대방의 아이디를 등록하면 실시간 채팅과 통화가 가능합니다.</div>
+        </div>
+    </div>
+
+    <button class="btn-confirm" onclick="window.handleLogin()">로그인 및 시작하기</button>
 </div>
 
-<div class="story-container" id="story-area"></div>
+<div id="main-app">
+    <p style="padding:20px;">로그인 성공! 채팅 화면으로 전환되었습니다.</p>
+</div>
 
-<main id="main-app" style="display:none; flex-direction:column; height:100%;">
-    <header>
-        <b id="target-name">대상 선택</b>
-        <div class="btn-group">
-            <button class="call-btn" id="call-ui-btn" onclick="window.makeCall()">📞</button>
-            <button onclick="window.handleAddFriend()">+ 친구</button>
-        </div>
-    </header>
-    <div id="chat-view"></div>
-    <footer id="chat-footer">
-        <label class="icon-btn" for="file-input">📎</label>
-        <input type="file" id="file-input" onchange="window.handleFile(this)">
-        <input type="text" id="m-in" placeholder="메시지 입력..." onkeypress="if(event.keyCode==13) window.handleSend()">
-        <button onclick="window.handleSend()" style="border:none; background:none; font-weight:bold;">전송</button>
-    </footer>
-</main>
-
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, get, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
-    const firebaseConfig = {
-        apiKey: "AIzaSyAcBQ_Pyt4kdExDLGyNZJwWGbCdGDzVIjQ",
-        authDomain: "starchet-e9630.firebaseapp.com",
-        databaseURL: "https://starchet-e9630-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "starchet-e9630",
-        storageBucket: "starchet-e9630.firebasestorage.app",
-        messagingSenderId: "532571302538",
-        appId: "1:532571302538:web:73ad808e560947ea02db73"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    let myId, targetId, peer;
-
-    window.handleLogin = async () => {
-        const id = document.getElementById('myId').value.trim().toLowerCase();
+<script>
+    window.handleLogin = () => {
+        const id = document.getElementById('myId').value.trim();
         const pw = document.getElementById('myPw').value.trim();
-        if(!id) return;
-
-        const snap = await get(ref(db, `auth/${id}`));
-        if(!snap.exists() || snap.val().pw === pw) {
-            if(!snap.exists()) await set(ref(db, `auth/${id}`), {pw, nick: id});
-            myId = id; startApp();
-        } else alert("비밀번호 오류");
-    };
-
-    function startApp() {
-        peer = new Peer(myId, { config: {'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }]} });
-        peer.on('open', () => {
-            document.getElementById('login-ui').style.display = 'none';
-            document.getElementById('main-app').style.display = 'flex';
-            loadFriends();
-        });
-
-        peer.on('call', async (call) => {
-            if (confirm(call.peer + "님의 전화를 받으시겠습니까?")) {
-                const s = await navigator.mediaDevices.getUserMedia({ audio: true });
-                call.answer(s);
-                call.on('stream', rs => { const a = new Audio(); a.srcObject = rs; a.play(); });
-            }
-        });
-
-        peer.on('error', (err) => {
-            if(err.type === 'unavailable-id') alert("이미 접속 중인 아이디입니다.");
-        });
+        
+        if(!id || !pw) {
+            alert("정보를 모두 입력해주세요.");
+            return;
+        }
+        
+        // 화면 전환 연출
+        document.getElementById('login-ui').style.display = 'none';
+        document.getElementById('main-app').style.display = 'block';
     }
-
-    window.handleAddFriend = async () => {
-        const fid = prompt("친구 ID:").toLowerCase().trim();
-        if(!fid || fid === myId) return;
-        const check = await get(ref(db, `auth/${fid}`));
-        if(check.exists()) set(ref(db, `users/${myId}/f/${fid}`), {id: fid});
-        else alert("존재하지 않는 아이디입니다.");
-    };
-
-    function loadFriends() {
-        onValue(ref(db, `users/${myId}/f`), snap => {
-            const area = document.getElementById('story-area'); area.innerHTML = "";
-            if(snap.val()) Object.keys(snap.val()).forEach(fid => {
-                area.innerHTML += `<div class="story-item" onclick="window.openChat('${fid}')">
-                    <div class="story-img"></div><div class="story-name">${fid}</div></div>`;
-            });
-        });
-    }
-
-    window.openChat = (fid) => {
-        targetId = fid;
-        document.getElementById('target-name').innerText = fid;
-        document.getElementById('chat-footer').style.display = 'flex';
-        document.getElementById('call-ui-btn').style.display = 'flex';
-        const rid = [myId, fid].sort().join("_");
-        onValue(ref(db, `msgs/${rid}`), s => {
-            const v = document.getElementById('chat-view'); v.innerHTML = "";
-            if(s.val()) Object.values(s.val()).forEach(m => {
-                const cls = m.s === myId ? 'me' : 'o';
-                let content = m.t;
-                if(m.file) {
-                    content = m.type.includes('image') ? `<img src="${m.file}" class="file-img">` : `<a href="${m.file}" download="${m.t}">📁 ${m.t}</a>`;
-                }
-                v.innerHTML += `<div class="msg ${cls}">${content}</div>`;
-            });
-            v.scrollTop = v.scrollHeight;
-        });
-    };
-
-    window.handleSend = () => {
-        const i = document.getElementById('m-in'); if(!i.value) return;
-        const rid = [myId, targetId].sort().join("_");
-        push(ref(db, `msgs/${rid}`), {t: i.value, s: myId});
-        i.value = "";
-    };
-
-    window.handleFile = (input) => {
-        const file = input.files[0]; if(!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const rid = [myId, targetId].sort().join("_");
-            push(ref(db, `msgs/${rid}`), {t: file.name, s: myId, file: e.target.result, type: file.type});
-        };
-        reader.readAsDataURL(file);
-    };
-
-    window.makeCall = async () => {
-        const s = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const call = peer.call(targetId, s);
-        call.on('stream', rs => { const a = new Audio(); a.srcObject = rs; a.play(); });
-    };
 </script>
+
 </body>
 </html>
