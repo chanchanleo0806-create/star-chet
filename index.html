@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>STAR TALK PRO</title>
+    <title>STAR TALK K-STYLE</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #ffffff; --side: #1a1a1a; --line: #eeeeee; --accent: #ff3b30; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
         body, html { height: 100%; width: 100%; overflow: hidden; background: var(--bg); }
 
-        /* [1] 자동 로그인 UI */
+        /* [1] 로그인 & 자동로그인 */
         #login-ui { position: fixed; inset: 0; background: #fff; z-index: 5000; display: flex; align-items: center; justify-content: center; }
         .login-box { width: 280px; display: flex; flex-direction: column; gap: 10px; }
         .login-box input { padding: 15px; border: 1px solid #eee; border-radius: 12px; outline: none; }
@@ -18,7 +18,7 @@
 
         /* [2] 메인 레이아웃 */
         #main-app { display: none; height: 100%; width: 100%; }
-        nav { width: 70px; background: var(--side); display: flex; flex-direction: column; align-items: center; padding: 25px 0; gap: 25px; z-index: 10; }
+        nav { width: 70px; background: var(--side); display: flex; flex-direction: column; align-items: center; padding: 25px 0; gap: 25px; z-index: 100; }
         .nav-item { display: flex; flex-direction: column; align-items: center; gap: 5px; color: #666; cursor: pointer; }
         .nav-item.active { color: #fff; }
         .nav-icon { font-size: 22px; }
@@ -27,60 +27,53 @@
         .content-panel { flex: 1; display: none; flex-direction: column; background: #fff; position: relative; }
         .content-panel.active { display: flex; }
 
-        /* [3] 카톡 스타일 프로필 */
-        .profile-view { position: absolute; inset: 0; background: #848b94; z-index: 5; color: #fff; display: flex; flex-direction: column; }
-        .profile-bg { position: absolute; inset: 0; z-index: 1; }
-        .profile-bg img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.7); }
-        .profile-ui { position: relative; z-index: 2; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 80px; }
-        .p-main-img { width: 100px; height: 100px; border-radius: 35px; object-fit: cover; border: 1px solid rgba(255,255,255,0.3); margin-bottom: 15px; }
-        .p-name { font-size: 20px; font-weight: bold; margin-bottom: 40px; }
-        .p-bottom-btns { display: flex; gap: 50px; border-top: 0.5px solid rgba(255,255,255,0.3); width: 100%; justify-content: center; padding-top: 30px; }
-        .pb-btn { display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; }
+        /* [3] ★ 카카오톡 스타일 프로필 디자인 ★ */
+        .k-profile-container { position: absolute; inset: 0; background: #848b94; z-index: 50; display: flex; flex-direction: column; }
+        .k-profile-bg { position: absolute; inset: 0; z-index: 1; }
+        .k-profile-bg img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.8); }
+        
+        .k-profile-header { position: relative; z-index: 52; padding: 20px; display: flex; justify-content: space-between; color: #fff; font-size: 20px; }
+        
+        .k-profile-content { position: relative; z-index: 52; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 50px; color: #fff; }
+        .k-p-img { width: 95px; height: 95px; border-radius: 35px; object-fit: cover; border: 1px solid rgba(255,255,255,0.2); margin-bottom: 12px; background: #eee; }
+        .k-p-name { font-size: 19px; font-weight: bold; margin-bottom: 30px; }
+        
+        .k-p-actions { width: 100%; border-top: 1px solid rgba(255,255,255,0.2); display: flex; justify-content: center; padding-top: 25px; gap: 40px; }
+        .k-action-btn { display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; }
+        .k-action-icon { font-size: 24px; }
+        .k-action-text { font-size: 12px; }
 
-        /* [4] 통화 화면 (영상/음성 보정 필터 적용) */
-        #call-ui { position: fixed; inset: 0; background: #111; z-index: 4000; display: none; flex-direction: column; }
-        #remote-v { width: 100%; height: 100%; object-fit: cover; background: #222; }
-        #local-v-box { position: absolute; top: 40px; right: 20px; width: 100px; height: 140px; border-radius: 12px; overflow: hidden; border: 2px solid #fff; z-index: 4010; transition: 0.3s; }
+        /* [4] 통화 UI */
+        #call-ui { position: fixed; inset: 0; background: #111; z-index: 4000; display: none; }
+        #remote-v { width: 100%; height: 100%; object-fit: cover; }
+        #local-v-box { position: absolute; top: 40px; right: 20px; width: 100px; height: 140px; border-radius: 12px; overflow: hidden; border: 2px solid #fff; z-index: 4010; }
         #local-v { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
-        .call-status { position: absolute; top: 100px; width: 100%; text-align: center; color: #fff; z-index: 4005; }
-        .call-btns { position: absolute; bottom: 50px; width: 100%; display: flex; justify-content: center; gap: 25px; z-index: 4020; }
-        .c-circle { width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 24px; color: #fff; cursor: pointer; }
+        .call-btns { position: absolute; bottom: 50px; width: 100%; display: flex; justify-content: center; gap: 25px; }
+        .c-circle { width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 24px; color: #fff; }
         .c-circle.red { background: var(--accent); }
+
+        /* 편집 모달 */
+        #edit-modal { position: absolute; inset: 0; background: #fff; z-index: 200; display: none; padding: 40px 20px; flex-direction: column; gap: 20px; }
     </style>
 </head>
 <body>
 
 <div id="login-ui">
     <div class="login-box">
-        <h2 style="text-align:center;">STAR TALK</h2>
+        <h2 style="text-align:center; margin-bottom:10px;">STAR TALK</h2>
         <input type="text" id="myId" placeholder="아이디">
         <input type="password" id="myPw" placeholder="비밀번호">
-        <button onclick="window.doLogin()">접속</button>
-    </div>
-</div>
-
-<div id="call-select-pop" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:4500; align-items:center; justify-content:center;">
-    <div style="background:#fff; padding:30px; border-radius:25px; text-align:center; width:280px;">
-        <h3 id="target-id-label" style="margin-bottom:20px;">상대방</h3>
-        <div style="display:flex; justify-content:space-around;">
-            <div onclick="window.startCall(false)" style="cursor:pointer;">
-                <div style="font-size:35px;">📞</div><b>음성</b>
-            </div>
-            <div onclick="window.startCall(true)" style="cursor:pointer;">
-                <div style="font-size:35px; color:#007aff;">🎥</div><b>영상</b>
-            </div>
-        </div>
+        <button onclick="window.doLogin()">시작하기</button>
     </div>
 </div>
 
 <div id="call-ui">
-    <div id="call-status-msg" class="call-status">연결 중...</div>
     <video id="remote-v" autoplay playsinline></video>
     <div id="local-v-box"><video id="local-v" autoplay playsinline muted></video></div>
     <div class="call-btns">
         <div onclick="window.toggleMic()"><div id="mic-icon" class="c-circle">🎤</div></div>
         <div onclick="window.endCall()"><div class="c-circle red">✕</div></div>
-        <div id="cam-ctrl-btn" onclick="window.toggleCam()"><div id="cam-icon" class="c-circle">🎥</div></div>
+        <div onclick="window.toggleCam()"><div id="cam-icon" class="c-circle">🎥</div></div>
     </div>
 </div>
 
@@ -103,16 +96,41 @@
     </div>
 
     <div id="panel-profile" class="content-panel">
-        <div class="profile-view">
-            <div class="profile-bg"><img id="view-bg" src=""></div>
-            <div class="profile-ui">
-                <img id="view-p" class="p-main-img" src="">
-                <div id="view-name" class="p-name">사용자</div>
-                <div class="p-bottom-btns">
-                    <div class="pb-btn" onclick="window.showEdit()">✏️<br>편집</div>
-                    <div class="pb-btn" onclick="window.showAudioSet()">🔔<br>소리</div>
-                    <div class="pb-btn" onclick="window.doLogout()">🚪<br>로그아웃</div>
+        <div class="k-profile-container">
+            <div class="k-profile-bg"><img id="view-bg" src="https://via.placeholder.com/800x1200/848b94/848b94"></div>
+            <div class="k-profile-header">
+                <span onclick="window.showPanel('friend', document.querySelector('.nav-item'))">✕</span>
+                <span>⚙️</span>
+            </div>
+            <div class="k-profile-content">
+                <img id="view-p" class="k-p-img" src="https://via.placeholder.com/150">
+                <div id="view-name" class="k-p-name">사용자</div>
+                <div class="k-p-actions">
+                    <div class="k-action-btn">
+                        <span class="k-action-icon">💬</span>
+                        <span class="k-action-text">나와의 채팅</span>
+                    </div>
+                    <div class="k-action-btn" onclick="window.showEdit()">
+                        <span class="k-action-icon">✏️</span>
+                        <span class="k-action-text">프로필 편집</span>
+                    </div>
+                    <div class="k-action-btn" onclick="window.doLogout()">
+                        <span class="k-action-icon">🚪</span>
+                        <span class="k-action-text">로그아웃</span>
+                    </div>
                 </div>
+            </div>
+            
+            <div id="edit-modal">
+                <h3 style="margin-bottom:20px;">프로필 편집</h3>
+                <label>닉네임</label>
+                <input type="text" id="set-name" style="padding:12px; border:1px solid #eee; border-radius:10px;">
+                <label>프로필 사진</label>
+                <input type="file" onchange="window.pre(this, 'view-p')">
+                <label>배경 사진</label>
+                <input type="file" onchange="window.pre(this, 'view-bg')">
+                <button onclick="window.saveP()" style="padding:15px; background:#fee500; color:#000; border:none; border-radius:12px; font-weight:bold; margin-top:20px;">완료</button>
+                <button onclick="document.getElementById('edit-modal').style.display='none'" style="background:none; border:none; color:#999;">취소</button>
             </div>
         </div>
     </div>
@@ -125,8 +143,7 @@
     const firebaseConfig = { apiKey: "AIzaSyAcBQ_Pyt4kdExDLGyNZJwWGbCdGDzVIjQ", databaseURL: "https://starchet-e9630-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "starchet-e9630" };
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    let myId, peer, currentCall, myStream, selFid, isMic=true, isCam=true;
-    let audioPlayer = new Audio();
+    let myId, peer, currentCall, myStream, isMic=true, isCam=true;
 
     // [자동 로그인]
     window.onload = () => {
@@ -150,89 +167,30 @@
     function initApp() {
         peer = new Peer(myId);
         peer.on('call', async (call) => {
-            const isVideo = call.metadata && call.metadata.video;
-            playCustomSound('call_sound');
-            if(confirm(`${call.peer}님의 ${isVideo?'영상':'음성'}통화 수락?`)) {
-                stopCustomSound();
-                myStream = await getEnhancedStream(isVideo);
+            if(confirm(call.peer + "님의 전화 수락?")) {
+                myStream = await navigator.mediaDevices.getUserMedia({ audio:true, video:true });
                 call.answer(myStream);
-                handleCallUI(call, isVideo);
-            } else { stopCustomSound(); }
+                handleCall(call);
+            }
         });
         loadData();
     }
 
-    // [핵심: 음성 및 영상 보정 로직]
-    async function getEnhancedStream(videoOn) {
-        const constraints = {
-            audio: {
-                echoCancellation: true, // 에코 제거
-                noiseSuppression: true, // 소음 제거
-                autoGainControl: true   // 볼륨 자동 조절
-            },
-            video: videoOn ? {
-                width: { ideal: 1280 },
-                height: { ideal: 720 },
-                facingMode: "user",
-                frameRate: { ideal: 30 }
-            } : false
-        };
-        return await navigator.mediaDevices.getUserMedia(constraints);
-    }
-
-    window.startCall = async (videoOn) => {
-        document.getElementById('call-select-pop').style.display = 'none';
-        try {
-            myStream = await getEnhancedStream(videoOn);
-            document.getElementById('local-v').srcObject = myStream;
-            const call = peer.call(selFid, myStream, { metadata: { video: videoOn } });
-            handleCallUI(call, videoOn);
-        } catch(e) { alert("카메라/마이크 권한을 확인해주세요."); }
+    // [프로필 저장 및 로드]
+    window.pre = (input, targetId) => {
+        const reader = new FileReader();
+        reader.onload = e => document.getElementById(targetId).src = e.target.result;
+        reader.readAsDataURL(input.files[0]);
     };
-
-    function handleCallUI(call, isVideo) {
-        currentCall = call;
-        document.getElementById('call-ui').style.display = 'flex';
-        document.getElementById('local-v-box').style.display = isVideo ? 'block' : 'none';
-        document.getElementById('cam-ctrl-btn').style.display = isVideo ? 'flex' : 'none';
-        document.getElementById('call-status-msg').innerText = isVideo ? "영상통화 중" : "음성통화 중";
-
-        call.on('stream', rs => {
-            const rv = document.getElementById('remote-v');
-            rv.srcObject = rs;
-            rv.onloadedmetadata = () => rv.play();
-        });
-        call.on('close', window.endCall);
-    }
-
-    // [기타 기능들]
-    window.toggleMic = () => { isMic = !isMic; myStream.getAudioTracks()[0].enabled = isMic; document.getElementById('mic-icon').innerText = isMic ? "🎤" : "🔇"; };
-    window.toggleCam = () => { isCam = !isCam; myStream.getVideoTracks()[0].enabled = isCam; document.getElementById('cam-icon').innerText = isCam ? "🎥" : "📵"; };
-    window.endCall = () => { 
-        if(currentCall) currentCall.close(); 
-        if(myStream) myStream.getTracks().forEach(t=>t.stop()); 
-        document.getElementById('call-ui').style.display='none'; 
-        stopCustomSound(); 
+    window.saveP = () => {
+        const name = document.getElementById('set-name').value;
+        const pImg = document.getElementById('view-p').src;
+        const bgImg = document.getElementById('view-bg').src;
+        update(ref(db, `users/${myId}`), { name, img: pImg, bg: bgImg });
+        document.getElementById('edit-modal').style.display = 'none';
     };
-
-    function playCustomSound(type) {
-        const data = localStorage.getItem(`st_${type}`);
-        if(data) { audioPlayer.src = data; audioPlayer.loop = true; audioPlayer.play(); }
-    }
-    function stopCustomSound() { audioPlayer.pause(); audioPlayer.currentTime = 0; }
 
     function loadData() {
-        onValue(ref(db, `friends/${myId}`), snap => {
-            const list = document.getElementById('friend-list'); list.innerHTML = "";
-            if(snap.val()) Object.entries(snap.val()).forEach(([fid, info]) => {
-                const d = document.createElement('div');
-                d.style = "padding:15px; display:flex; align-items:center; gap:10px; border-bottom:1px solid #eee;";
-                d.innerHTML = `<img src="${info.img||'https://via.placeholder.com/50'}" style="width:50px; height:50px; border-radius:15px; object-fit:cover;">
-                               <b style="flex:1;">${info.name||fid}</b>
-                               <div onclick="window.showCallPop('${fid}')" style="font-size:22px; cursor:pointer;">📞</div>`;
-                list.appendChild(d);
-            });
-        });
         onValue(ref(db, `users/${myId}`), snap => {
             const v = snap.val(); if(!v) return;
             document.getElementById('view-name').innerText = v.name || myId;
@@ -241,13 +199,15 @@
         });
     }
 
-    window.showCallPop = (fid) => { selFid = fid; document.getElementById('target-id-label').innerText = fid; document.getElementById('call-select-pop').style.display='flex'; };
+    // [기타 제어]
+    window.showEdit = () => document.getElementById('edit-modal').style.display = 'flex';
     window.showPanel = (t, el) => {
         document.querySelectorAll('.content-panel').forEach(p=>p.classList.remove('active'));
         document.getElementById(`panel-${t}`).classList.add('active');
         document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active')); el.classList.add('active');
     };
     window.doLogout = () => { localStorage.clear(); location.reload(); };
+    window.endCall = () => { if(currentCall) currentCall.close(); document.getElementById('call-ui').style.display='none'; };
 </script>
 </body>
 </html>
