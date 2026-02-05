@@ -1,224 +1,77 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>STAR TALK - CONNECTING</title>
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-    <style>
-        :root { --main: #FEE500; --dark: #3C1E1E; --blue: #9bbbd4; --red: #ff5f5f; }
-        body { margin: 0; font-family: sans-serif; background: #f0f0f0; display: flex; justify-content: center; height: 100vh; overflow: hidden; }
-        #app { width: 100%; max-width: 450px; background: white; display: flex; flex-direction: column; position: relative; }
-
-        /* 로그인 */
-        .overlay { position: absolute; inset: 0; background: var(--main); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; }
-        .in-field { width: 100%; padding: 15px; margin: 5px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; outline: none; }
-        .login-btn { width: 100%; padding: 15px; background: var(--dark); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-
-        /* 통화 레이어 (연결 중 상태 포함) */
-        #call-ui { position: absolute; inset: 0; background: #2c3e50; z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; }
-        .calling-info { text-align: center; margin-bottom: 50px; }
-        .calling-info .avatar-l { width: 120px; height: 120px; background: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 50px; border: 2px solid white; }
-        
-        /* 반짝이는 애니메이션 */
-        .dots:after { content: ' .'; animation: dots 1.5s steps(5, end) infinite; }
-        @keyframes dots { 0%, 20% { content: ''; } 40% { content: '.'; } 60% { content: '..'; } 80%, 100% { content: '...'; } }
-
-        .video-box { width: 100%; flex: 1; position: relative; background: #000; display: none; }
-        #remote-video { width: 100%; height: 100%; object-fit: cover; }
-        #local-video { width: 100px; height: 140px; position: absolute; top: 20px; right: 20px; border: 2px solid white; border-radius: 10px; object-fit: cover; z-index: 10; }
-        
-        .call-btns { padding: 50px; width: 100%; display: flex; justify-content: center; background: rgba(0,0,0,0.5); }
-        .end-btn { width: 70px; height: 70px; border-radius: 50%; border: none; background: var(--red); color: white; font-size: 30px; cursor: pointer; }
-
-        /* 리스트 & 채팅 */
-        header { background: #333; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
-        #list-view { flex: 1; overflow-y: auto; }
-        .f-row { padding: 15px; border-bottom: 1px solid #eee; display: flex; align-items: center; cursor: pointer; }
-        #chat-view { flex: 1; overflow-y: auto; background: var(--blue); padding: 15px; display: none; flex-direction: column; gap: 10px; }
-        .bubble { max-width: 80%; padding: 8px 12px; border-radius: 10px; font-size: 14px; }
-        .me { align-self: flex-end; background: var(--main); }
-        .o { align-self: flex-start; background: white; }
-
-        .footer { padding: 10px; background: white; display: none; gap: 10px; align-items: center; }
-        #msg-input { flex: 1; border: 1px solid #ddd; padding: 10px; border-radius: 20px; outline: none; }
-    </style>
-</head>
-<body>
-
-<div id="app">
-    <div id="login-layer" class="overlay">
-        <h1 style="margin-bottom:40px;">STAR TALK</h1>
-        <input type="text" id="myId" class="in-field" placeholder="아이디">
-        <input type="password" id="myPw" class="in-field" placeholder="비밀번호">
-        <button onclick="doLogin()" class="login-btn">로그인 / 가입</button>
-    </div>
-
-    <header>
-        <span id="header-id">STAR TALK</span>
-        <button onclick="addFriend()" style="background:var(--main); border:none; padding:5px 10px; border-radius:15px; font-size:12px; font-weight:bold;">+ 친구</button>
-    </header>
-
-    <div id="list-view"></div>
-    <div id="chat-view"></div>
-
-    <div class="footer" id="bottom-bar">
-        <span onclick="makeCall(false)" style="cursor:pointer; font-size:20px;">📞</span>
-        <span onclick="makeCall(true)" style="cursor:pointer; font-size:20px;">📹</span>
-        <input type="text" id="msg-input" placeholder="메시지 입력..." onkeypress="if(event.keyCode==13) sendMsg()">
-        <button onclick="sendMsg()" style="border:none; background:none; font-weight:bold; color:var(--dark);">전송</button>
-    </div>
-
-    <div id="call-ui">
-        <div class="calling-info" id="calling-info">
-            <div class="avatar-l">👤</div>
-            <h2 id="target-name">상대방</h2>
-            <p style="font-size:18px; color:#ddd;"><span id="call-type">연결</span> 중<span class="dots"></span></p>
-        </div>
-
-        <div class="video-box" id="v-box">
-            <video id="remote-video" autoplay playsinline></video>
-            <video id="local-video" autoplay muted playsinline></video>
-        </div>
-
-        <div class="call-btns">
-            <button class="end-btn" onclick="hangUp()">🔚</button>
-        </div>
-    </div>
+<div class="footer" id="bottom-bar">
+    <label for="file-in" style="cursor:pointer; font-size:20px;">📎</label>
+    <input type="file" id="file-in" style="display:none;" onchange="uploadFile(this)">
+    <span onclick="makeCall(false)" style="cursor:pointer; font-size:20px;">📞</span>
+    <span onclick="makeCall(true)" style="cursor:pointer; font-size:20px;">📹</span>
+    <input type="text" id="msg-input" placeholder="메시지 입력..." onkeypress="if(event.keyCode==13) sendMsg()">
+    <button onclick="sendMsg()" style="border:none; background:none; font-weight:bold; color:var(--dark);">전송</button>
 </div>
 
 <script type="module">
+    // 1. Storage 라이브러리 추가 호출
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, get, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
-    const config = {
-        apiKey: "AIzaSyAcBQ_Pyt4kdExDLGyNZJwWGbCdGDzVIjQ",
-        authDomain: "starchet-e9630.firebaseapp.com",
-        databaseURL: "https://starchet-e9630-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "starchet-e9630",
-        storageBucket: "starchet-e9630.firebasestorage.app",
-        messagingSenderId: "532571302538",
-        appId: "1:532571302538:web:73ad808e560947ea02db73"
-    };
-
+    // 유저님의 설정값
+    const config = { /* ...동일... */ };
     const app = initializeApp(config);
     const db = getDatabase(app);
-    let myId = "", targetId = "", peer = null, currentCall = null;
+    const storage = getStorage(app); // 스토리지 초기화
 
-    window.doLogin = async () => {
-        myId = document.getElementById('myId').value.trim();
-        const pw = document.getElementById('myPw').value.trim();
-        if(!myId || !pw) return;
+    // 2. 파일 업로드 로직
+    window.uploadFile = async (input) => {
+        const file = input.files[0];
+        if (!file) return;
 
-        const authRef = ref(db, `auth/${myId}`);
-        const snap = await get(authRef);
+        const status = document.getElementById('header-id');
+        const originalText = status.innerText;
+        status.innerText = "파일 업로드 중...";
 
-        if(!snap.exists() || snap.val().pw === pw) {
-            if(!snap.exists()) await set(authRef, { pw: pw });
-            peer = new Peer(myId);
-            peer.on('open', () => {
-                document.getElementById('login-layer').style.display = 'none';
-                document.getElementById('header-id').innerText = "ID: " + myId;
-                loadList();
-                listenCall();
-            });
-        } else alert("비번 오류");
-    };
-
-    window.addFriend = async () => {
-        const fid = prompt("친구 아이디:");
-        if(fid && fid !== myId) await set(ref(db, `users/${myId}/friends/${fid}`), { id: fid });
-    };
-
-    function loadList() {
-        onValue(ref(db, `users/${myId}/friends`), (snap) => {
-            const list = document.getElementById('list-view');
-            list.innerHTML = "";
-            if(snap.val()) {
-                Object.keys(snap.val()).forEach(fid => {
-                    const d = document.createElement('div');
-                    d.className = 'f-row';
-                    d.innerHTML = `<div style="width:40px;height:40px;background:#eee;border-radius:15px;margin-right:15px;display:flex;align-items:center;justify-content:center;">👤</div><b>${fid}</b>`;
-                    d.onclick = () => openChat(fid);
-                    list.appendChild(d);
-                });
-            }
-        });
-    }
-
-    function openChat(fid) {
-        targetId = fid;
-        document.getElementById('list-view').style.display = 'none';
-        document.getElementById('chat-view').style.display = 'flex';
-        document.getElementById('bottom-bar').style.display = 'flex';
-        
-        const rid = [myId, fid].sort().join("_");
-        onValue(ref(db, `messages/${rid}`), (snap) => {
-            const box = document.getElementById('chat-view'); box.innerHTML = "";
-            if(snap.val()) {
-                Object.values(snap.val()).forEach(m => {
-                    const d = document.createElement('div');
-                    d.className = `bubble ${m.sender === myId ? 'me' : 'o'}`;
-                    d.innerText = m.text;
-                    box.appendChild(d);
-                });
-                box.scrollTop = box.scrollHeight;
-            }
-        });
-    }
-
-    window.sendMsg = () => {
-        const i = document.getElementById('msg-input');
-        if(!i.value) return;
-        const rid = [myId, targetId].sort().join("_");
-        push(ref(db, `messages/${rid}`), { text: i.value, sender: myId });
-        i.value = "";
-    };
-
-    // [전화 걸기 로직]
-    window.makeCall = async (isVideo) => {
-        document.getElementById('call-ui').style.display = 'flex';
-        document.getElementById('target-name').innerText = targetId;
-        document.getElementById('call-type').innerText = isVideo ? "페이스톡 연결" : "보이스톡 연결";
-        
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: isVideo });
-            const call = peer.call(targetId, stream);
-            handleCall(call, stream, isVideo);
+            // 파일 경로 설정 (파일명에 시간을 붙여 중복 방지)
+            const fileRef = sRef(storage, `uploads/${Date.now()}_${file.name}`);
+            
+            // 업로드 후 URL 가져오기
+            const snapshot = await uploadBytes(fileRef, file);
+            const url = await getDownloadURL(snapshot.ref);
+
+            // 채팅방에 파일 URL 전송
+            const rid = [myId, targetId].sort().join("_");
+            push(ref(db, `messages/${rid}`), { 
+                text: url, 
+                sender: myId, 
+                type: file.type.includes('image') ? 'image' : 'file',
+                fileName: file.name
+            });
+
+            status.innerText = originalText;
         } catch (e) {
-            alert("카메라/마이크 권한이 필요합니다.");
-            hangUp();
+            alert("파일 전송 실패: " + e.message);
+            status.innerText = originalText;
         }
     };
 
-    function listenCall() {
-        peer.on('call', async (call) => {
-            if(confirm(`${call.peer}님 전화 수락?`)) {
-                document.getElementById('call-ui').style.display = 'flex';
-                document.getElementById('target-name').innerText = call.peer;
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-                call.answer(stream);
-                handleCall(call, stream, true);
-            }
-        });
+    // 3. 메시지 렌더링 수정 (이미지면 그림으로 보여주기)
+    function renderMessages(snap) {
+        const box = document.getElementById('chat-view'); 
+        box.innerHTML = "";
+        if(snap.val()) {
+            Object.values(snap.val()).forEach(m => {
+                const d = document.createElement('div');
+                d.className = `bubble ${m.sender === myId ? 'me' : 'o'}`;
+                
+                if (m.type === 'image') {
+                    d.innerHTML = `<img src="${m.text}" style="max-width:200px; border-radius:10px; cursor:pointer;" onclick="window.open('${m.text}')">`;
+                } else if (m.type === 'file') {
+                    d.innerHTML = `📁 <a href="${m.text}" target="_blank" style="color:inherit;">${m.fileName}</a>`;
+                } else {
+                    d.innerText = m.text;
+                }
+                box.appendChild(d);
+            });
+            box.scrollTop = box.scrollHeight;
+        }
     }
-
-    function handleCall(call, localStream, isVideo) {
-        currentCall = call;
-        call.on('stream', (remoteStream) => {
-            // 연결 성공 시 "연결 중" UI 숨기고 비디오 박스 보이기
-            document.getElementById('calling-info').style.display = 'none';
-            document.getElementById('v-box').style.display = 'block';
-            document.getElementById('remote-video').srcObject = remoteStream;
-            document.getElementById('local-video').srcObject = localStream;
-        });
-        call.on('close', hangUp);
-    }
-
-    window.hangUp = () => {
-        if(currentCall) currentCall.close();
-        location.reload();
-    };
+    // (기존 openChat 내의 onValue 부분에서 renderMessages를 호출하도록 수정)
 </script>
-</body>
-</html>
