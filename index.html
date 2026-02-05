@@ -10,43 +10,44 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; position: fixed; font-family: sans-serif; }
 
-        /* [메인 헤더] */
+        /* [상단 헤더] */
         header { 
             height: 60px; background: #fff; border-bottom: 1px solid #eee; 
             display: flex; align-items: center; justify-content: space-between; padding: 0 15px; flex-shrink: 0; 
         }
         #target-title { font-size: 18px; font-weight: bold; }
         
-        /* [전화기 버튼] */
+        /* [전화기 버튼 디자인] */
         .call-btn { 
             width: 44px; height: 44px; background: var(--call); color: white; 
             border: none; border-radius: 50%; font-size: 20px; 
             display: none; align-items: center; justify-content: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2); cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer;
+            animation: pulse 2s infinite;
         }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
-        /* [통화 화면 Overlay] */
+        /* [전체화면 통화 레이어] */
         #call-screen { 
-            position: fixed; inset: 0; background: rgba(0,0,0,0.95); 
+            position: fixed; inset: 0; background: linear-gradient(to bottom, #2c3e50, #000); 
             z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; 
         }
-        .call-user-img { width: 100px; height: 100px; background: #555; border-radius: 50%; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; font-size: 40px; }
-        .hangup-btn { width: 70px; height: 70px; background: var(--red); border: none; border-radius: 50%; color: white; font-size: 24px; margin-top: 50px; cursor: pointer; }
+        .user-circle { width: 120px; height: 120px; background: rgba(255,255,255,0.1); border-radius: 50%; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; font-size: 50px; border: 2px solid var(--call); }
+        .hangup-btn { width: 70px; height: 70px; background: var(--red); border: none; border-radius: 50%; color: white; font-size: 30px; margin-top: 60px; box-shadow: 0 0 20px rgba(255,0,0,0.4); }
 
         /* 채팅 UI */
         #chat-view { flex: 1; overflow-y: auto; background: var(--bg); padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { padding: 10px 14px; border-radius: 12px; max-width: 80%; font-size: 15px; }
-        .me { align-self: flex-end; background: var(--main); }
-        .o { align-self: flex-start; background: #fff; }
+        .msg { padding: 10px 14px; border-radius: 12px; max-width: 80%; font-size: 15px; line-height: 1.4; }
+        .me { align-self: flex-end; background: var(--main); border-top-right-radius: 2px; }
+        .o { align-self: flex-start; background: #fff; border-top-left-radius: 2px; }
 
         /* 하단 입력바 */
         footer { height: 70px; background: #fff; border-top: 1px solid #ddd; display: flex; align-items: center; gap: 8px; padding: 0 10px; padding-bottom: env(safe-area-inset-bottom); }
         #m-in { flex: 1; height: 45px; background: #f0f0f0; border-radius: 22px; padding: 0 15px; border: none; font-size: 16px; outline: none; }
         .send-btn { width: 60px; height: 45px; background: var(--main); border: none; border-radius: 10px; font-weight: bold; }
 
-        /* 로그인/메뉴 공통 */
+        /* 로그인/메뉴 */
         #login-ui { position: fixed; inset: 0; background: #fff; z-index: 5000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-        .login-input { width: 100%; max-width: 300px; height: 50px; margin-bottom: 10px; padding: 15px; border: 1px solid #ddd; border-radius: 10px; }
         #side-menu { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background: #fff; z-index: 4000; transition: 0.3s; }
         #side-menu.open { left: 0; }
         #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 3500; display: none; }
@@ -55,17 +56,17 @@
 <body>
 
     <div id="call-screen">
-        <div class="call-user-img">👤</div>
-        <h2 id="call-user-name">상대방</h2>
-        <p id="call-timer">연결 중...</p>
-        <button class="hangup-btn" onclick="window.endCall()">📞</button>
+        <div class="user-circle">👤</div>
+        <h2 id="call-target-name">상대방</h2>
+        <p id="call-status">연결 시도 중...</p>
+        <button class="hangup-btn" onclick="window.endCall()">✕</button>
     </div>
 
     <div id="login-ui">
-        <h2>STAR TALK</h2>
-        <input type="text" id="myId" class="login-input" placeholder="아이디">
-        <input type="password" id="myPw" class="login-input" placeholder="비밀번호">
-        <button onclick="window.handleLogin()" style="width:100%; max-width:300px; height:50px; background:#000; color:#fff; border-radius:10px;">시작하기</button>
+        <h2 style="margin-bottom:30px;">STAR TALK</h2>
+        <input type="text" id="myId" style="width:100%; max-width:300px; height:50px; margin-bottom:10px; padding:15px; border:1px solid #ddd; border-radius:10px;" placeholder="아이디">
+        <input type="password" id="myPw" style="width:100%; max-width:300px; height:50px; margin-bottom:10px; padding:15px; border:1px solid #ddd; border-radius:10px;" placeholder="비밀번호">
+        <button onclick="window.handleLogin()" style="width:100%; max-width:300px; height:50px; background:#000; color:#fff; border:none; border-radius:10px; font-weight:bold;">시작하기</button>
     </div>
 
     <div id="overlay" onclick="window.toggleMenu()"></div>
@@ -107,56 +108,53 @@
     const db = getDatabase(app);
     let myId, targetId, peer, currentCall, myStream;
 
-    // 1. PeerJS 초기화 (전화 서버 연결)
+    // 통화 초기화
     function initCallSystem() {
         peer = new Peer(myId);
-        
-        // 전화가 왔을 때
         peer.on('call', async (call) => {
-            if(confirm(call.peer + "님에게 전화가 왔습니다! 받으시겠습니까?")) {
+            if(confirm(call.peer + "님에게 전화가 왔습니다!")) {
                 try {
                     myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     call.answer(myStream);
-                    handleCallStream(call);
-                } catch(e) { alert("마이크 권한이 필요합니다."); }
+                    setupCall(call);
+                } catch(e) { alert("마이크 권한 허용이 필요합니다."); }
             }
         });
     }
 
-    // 2. 전화 걸기
     window.makeCall = async () => {
         if(!targetId) return;
         try {
             myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
             const call = peer.call(targetId, myStream);
-            handleCallStream(call);
-        } catch(e) { alert("마이크를 사용할 수 없습니다."); }
+            setupCall(call);
+        } catch(e) { alert("마이크 권한을 확인해주세요."); }
     };
 
-    // 3. 통화 연결 처리
-    function handleCallStream(call) {
+    function setupCall(call) {
         currentCall = call;
         document.getElementById('call-screen').style.display = 'flex';
-        document.getElementById('call-user-name').innerText = call.peer;
-        document.getElementById('call-timer').innerText = "연결됨";
-
+        document.getElementById('call-target-name').innerText = call.peer;
+        
         call.on('stream', (remoteStream) => {
+            document.getElementById('call-status').innerText = "통화 중...";
             const audio = new Audio();
             audio.srcObject = remoteStream;
             audio.play();
         });
 
         call.on('close', () => window.endCall());
+        call.on('error', () => window.endCall());
     }
 
-    // 4. 통화 종료
     window.endCall = () => {
         if(currentCall) currentCall.close();
-        if(myStream) myStream.getTracks().forEach(track => track.stop());
+        if(myStream) myStream.getTracks().forEach(t => t.stop());
         document.getElementById('call-screen').style.display = 'none';
+        document.getElementById('call-status').innerText = "연결 시도 중...";
     };
 
-    // --- 기존 로그인 및 채팅 로직 ---
+    // 로그인 & 자동로그인
     window.handleLogin = async () => {
         const id = document.getElementById('myId').value.trim().toLowerCase();
         const pw = document.getElementById('myPw').value.trim();
@@ -170,7 +168,7 @@
             document.getElementById('login-ui').style.display = 'none';
             document.getElementById('main-app').style.display = 'flex';
             initCallSystem(); loadFriends();
-        } else alert("비밀번호 오류");
+        } else alert("비번 오류");
     };
 
     window.addEventListener('load', () => {
@@ -181,6 +179,7 @@
         }
     });
 
+    // 공통 기능
     window.toggleMenu = () => {
         document.getElementById('side-menu').classList.toggle('open');
         document.getElementById('overlay').style.display = document.getElementById('side-menu').classList.contains('open') ? 'block' : 'none';
@@ -191,7 +190,7 @@
             const list = document.getElementById('friend-list'); list.innerHTML = "";
             if(snap.val()) Object.keys(snap.val()).forEach(fid => {
                 const item = document.createElement('div');
-                item.style = "padding:15px; border-bottom:1px solid #eee; font-weight:bold;";
+                item.style = "padding:15px; border-bottom:1px solid #eee; font-weight:bold; cursor:pointer;";
                 item.innerHTML = `👤 ${fid}`;
                 item.onclick = () => { window.openChat(fid); window.toggleMenu(); };
                 list.appendChild(item);
