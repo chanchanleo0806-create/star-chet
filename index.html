@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>STAR TALK - CALL</title>
+    <title>STAR TALK - CALL BUTTON</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        :root { --main: #fee500; --bg: #abc1d1; --call: #4cd964; }
+        :root { --main: #fee500; --bg: #abc1d1; --call-green: #4cd964; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; position: fixed; font-family: sans-serif; }
 
@@ -15,33 +15,41 @@
         .login-input { width: 100%; max-width: 300px; height: 50px; margin-bottom: 10px; padding: 15px; border: 1px solid #ddd; border-radius: 10px; }
         .btn-login { width: 100%; max-width: 300px; height: 50px; background: #000; color: #fff; border: none; border-radius: 10px; font-weight: bold; }
 
-        /* [메인 구조] */
-        #main-app { display: none; flex-direction: column; width: 100%; height: 100%; background: var(--bg); }
-        header { height: 55px; background: #fff; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; flex-shrink: 0; }
-        #chat-view { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-
-        /* [하단 입력창] */
-        footer { height: 60px; background: #fff; border-top: 1px solid #ddd; display: flex; align-items: center; gap: 8px; padding: 0 10px; padding-bottom: env(safe-area-inset-bottom); flex-shrink: 0; }
-        #m-in { flex: 1; height: 40px; background: #f0f0f0; border: none; border-radius: 20px; padding: 0 15px; font-size: 16px; outline: none; }
-        .send-btn { width: 55px; height: 40px; background: var(--main); border: none; border-radius: 10px; font-weight: bold; }
-
-        /* [통화 알림/화면] */
-        #call-ui { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); 
-            z-index: 6000; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; 
+        /* [메인 헤더 - 전화버튼 포함] */
+        header { 
+            height: 60px; background: #fff; border-bottom: 1px solid #eee; 
+            display: flex; align-items: center; justify-content: space-between; padding: 0 10px; flex-shrink: 0; 
         }
-        .call-btn-group { display: flex; gap: 20px; margin-top: 30px; }
-        .btn-call-end { background: #ff3b30; color: white; border: none; padding: 15px 30px; border-radius: 30px; font-weight: bold; }
+        .header-left { display: flex; align-items: center; gap: 10px; }
+        #target-title { font-size: 18px; font-weight: bold; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        
+        /* [전화기 아이콘 버튼] */
+        .call-btn { 
+            width: 45px; height: 45px; background: var(--call-green); color: white; 
+            border: none; border-radius: 50%; font-size: 20px; cursor: pointer;
+            display: none; /* 친구 선택 전엔 숨김 */
+            align-items: center; justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* 채팅 구역 */
+        #chat-view { flex: 1; overflow-y: auto; background: var(--bg); padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .msg { padding: 10px 14px; border-radius: 12px; max-width: 80%; font-size: 15px; }
+        .me { align-self: flex-end; background: var(--main); }
+        .o { align-self: flex-start; background: #fff; }
+
+        /* 하단 입력창 */
+        footer { height: 70px; background: #fff; border-top: 1px solid #ddd; display: flex; align-items: center; gap: 8px; padding: 0 10px; }
+        #m-in { flex: 1; height: 45px; background: #f0f0f0; border: none; border-radius: 22px; padding: 0 15px; font-size: 16px; outline: none; }
+        .send-btn { width: 60px; height: 45px; background: var(--main); border: none; border-radius: 10px; font-weight: bold; }
 
         /* 사이드 메뉴 */
         #side-menu { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background: #fff; z-index: 4000; transition: 0.3s; box-shadow: 5px 0 15px rgba(0,0,0,0.2); }
         #side-menu.open { left: 0; }
         #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 3500; display: none; }
-        
-        /* 메시지 */
-        .msg { padding: 10px 14px; border-radius: 12px; max-width: 80%; font-size: 15px; word-break: break-all; }
-        .me { align-self: flex-end; background: var(--main); }
-        .o { align-self: flex-start; background: #fff; }
+
+        /* 통화 중 화면 */
+        #call-ui { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 6000; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; }
     </style>
 </head>
 <body>
@@ -54,31 +62,33 @@
     </div>
 
     <div id="call-ui">
-        <div style="font-size: 24px; margin-bottom: 10px;" id="call-status">전화 연결 중...</div>
-        <div id="call-target-name" style="font-size: 18px; color: #ccc;">상대방</div>
-        <div class="call-btn-group">
-            <button class="btn-call-end" onclick="location.reload()">통화 종료</button>
-        </div>
+        <div id="call-status" style="font-size: 24px;">통화 연결 중...</div>
+        <div id="call-target" style="font-size: 18px; margin: 20px 0; color: #ccc;">상대방</div>
+        <button onclick="location.reload()" style="background: #ff3b30; color: white; border: none; padding: 15px 40px; border-radius: 30px; font-weight: bold;">종료</button>
     </div>
 
     <div id="overlay" onclick="window.toggleMenu()"></div>
 
     <nav id="side-menu">
-        <div style="padding:20px; border-bottom:1px solid #eee; font-weight:bold; display:flex; justify-content:space-between; align-items:center;">
+        <div style="padding:20px; border-bottom:1px solid #eee; font-weight:bold; display:flex; justify-content:space-between;">
             친구 목록 <button onclick="window.handleAddFriend()">+ 추가</button>
         </div>
         <div id="friend-list" style="padding:10px;"></div>
     </nav>
 
-    <main id="main-app">
+    <main id="main-app" style="display:none; flex-direction:column; height:100%;">
         <header>
-            <button onclick="window.toggleMenu()" style="background:none; border:none; font-size:24px;">≡</button>
-            <b id="target-title">상대를 선택하세요</b>
-            <button id="btn-call" onclick="window.makeCall()" style="background:none; border:none; font-size:22px; display:none;">📞</button>
+            <div class="header-left">
+                <button onclick="window.toggleMenu()" style="background:none; border:none; font-size:24px;">≡</button>
+                <span id="target-title">상대 선택</span>
+            </div>
+            <button id="btn-call" class="call-btn" onclick="window.makeCall()">📞</button>
         </header>
+
         <div id="chat-view"></div>
+
         <footer>
-            <input type="text" id="m-in" placeholder="메시지 입력..." onkeypress="if(event.keyCode==13) window.handleSend()">
+            <input type="text" id="m-in" placeholder="채팅 입력..." onkeypress="if(event.keyCode==13) window.handleSend()">
             <button class="send-btn" onclick="window.handleSend()">전송</button>
         </footer>
     </main>
@@ -116,48 +126,36 @@
             document.getElementById('login-ui').style.display = 'none';
             document.getElementById('main-app').style.display = 'flex';
             initPeer(); loadFriends(); window.toggleMenu();
-        } else alert("로그인 정보가 틀립니다.");
+        } else alert("비밀번호 오류");
     };
 
     function initPeer() {
         peer = new Peer(myId);
         peer.on('call', async (call) => {
-            if(confirm(call.peer + "님에게 전화가 왔습니다. 받으시겠습니까?")) {
+            if(confirm(call.peer + "님의 전화를 받으시겠습니까?")) {
                 myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 call.answer(myStream);
-                showCallUI(call.peer, "통화 중");
-                call.on('stream', (remoteStream) => {
-                    const audio = new Audio();
-                    audio.srcObject = remoteStream;
-                    audio.play();
-                });
+                document.getElementById('call-ui').style.display = 'flex';
+                document.getElementById('call-target').innerText = call.peer;
+                document.getElementById('call-status').innerText = "통화 중...";
+                call.on('stream', (rs) => { const a = new Audio(); a.srcObject = rs; a.play(); });
             }
         });
     }
 
     window.makeCall = async () => {
         if(!targetId) return;
-        showCallUI(targetId, "연결 대기 중...");
+        document.getElementById('call-ui').style.display = 'flex';
+        document.getElementById('call-target').innerText = targetId;
         try {
             myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
             const call = peer.call(targetId, myStream);
-            call.on('stream', (remoteStream) => {
-                document.getElementById('call-status').innerText = "통화 중";
-                const audio = new Audio();
-                audio.srcObject = remoteStream;
-                audio.play();
+            call.on('stream', (rs) => {
+                document.getElementById('call-status').innerText = "통화 중...";
+                const a = new Audio(); a.srcObject = rs; a.play();
             });
-        } catch (e) {
-            alert("마이크 권한이 필요합니다.");
-            location.reload();
-        }
+        } catch(e) { alert("마이크 권한 필요"); location.reload(); }
     };
-
-    function showCallUI(name, status) {
-        document.getElementById('call-ui').style.display = 'flex';
-        document.getElementById('call-target-name').innerText = name;
-        document.getElementById('call-status').innerText = status;
-    }
 
     function loadFriends() {
         onValue(ref(db, `users/${myId}/f`), snap => {
@@ -176,7 +174,7 @@
     window.openChat = (fid) => {
         targetId = fid;
         document.getElementById('target-title').innerText = fid;
-        document.getElementById('btn-call').style.display = 'block';
+        document.getElementById('btn-call').style.display = 'flex'; // 전화 버튼 보이기
         const rid = [myId, fid].sort().join("_");
         onValue(ref(db, `msgs/${rid}`), s => {
             const v = document.getElementById('chat-view'); v.innerHTML = "";
@@ -203,7 +201,6 @@
         if(fid && fid !== myId) {
             const check = await get(ref(db, `auth/${fid}`));
             if(check.exists()) await set(ref(db, `users/${myId}/f/${fid}`), {id: fid});
-            else alert("없는 사용자");
         }
     };
 </script>
