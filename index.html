@@ -3,55 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>STAR TALK FINAL</title>
+    <title>STAR TALK FINAL FIX</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        :root { --bg: #ffffff; --side: #1a1a1a; --yellow: #fee500; --accent: #ff3b30; }
+        :root { --bg: #ffffff; --side: #1a1a1a; --yellow: #fee500; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
         body, html { height: 100%; width: 100%; overflow: hidden; background: var(--bg); }
 
-        /* [통합 인증 화면] */
-        #auth-ui { position: fixed; inset: 0; background: #fff; z-index: 5000; display: flex; align-items: center; justify-content: center; }
+        /* [로그인/회원가입 영역] */
+        #auth-ui { position: fixed; inset: 0; background: #fff; z-index: 10000; display: flex; align-items: center; justify-content: center; }
         .auth-box { width: 300px; display: flex; flex-direction: column; gap: 12px; }
-        .auth-box h2 { text-align: center; margin-bottom: 10px; letter-spacing: -1px; }
-        .auth-box input { padding: 15px; border: 1px solid #eee; border-radius: 12px; outline: none; font-size: 14px; }
+        .auth-box input { padding: 15px; border: 1px solid #eee; border-radius: 12px; outline: none; }
         .auth-box button { padding: 15px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
-        .btn-main { background: #000; color: #fff; }
-        .btn-sub { background: #f5f5f5; color: #333; margin-top: 5px; }
 
-        /* [메인 앱 레이아웃] */
+        /* [메인 레이아웃] */
         #main-app { display: none; height: 100%; width: 100%; }
-        nav { width: 70px; background: var(--side); display: flex; flex-direction: column; align-items: center; padding: 25px 0; gap: 25px; }
-        .nav-item { color: #666; cursor: pointer; font-size: 22px; }
+        nav { width: 70px; background: var(--side); display: flex; flex-direction: column; align-items: center; padding: 25px 0; gap: 25px; z-index: 500; }
+        .nav-item { color: #666; cursor: pointer; font-size: 24px; transition: 0.2s; }
         .nav-item.active { color: #fff; }
 
-        .content-panel { flex: 1; display: none; flex-direction: column; background: #fff; position: relative; }
+        /* [패널 시스템] */
+        .content-container { flex: 1; position: relative; height: 100%; overflow: hidden; }
+        .content-panel { position: absolute; inset: 0; display: none; flex-direction: column; background: #fff; z-index: 10; }
         .content-panel.active { display: flex; }
+        
         .header { padding: 20px; font-weight: bold; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
 
-        /* 프로필 감성 (카톡 스타일) */
-        .k-profile { position: absolute; inset: 0; background: #848b94; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 60px; z-index: 10; }
-        .k-p-img { width: 100px; height: 100px; border-radius: 35px; background: #eee; margin-bottom: 15px; object-fit: cover; }
+        /* [★ 프로필 화면 보정 ★] */
+        #panel-profile { z-index: 20; } /* 프로필 패널이 활성화될 때 다른 패널보다 위에 있도록 */
+        .k-profile { position: relative; height: 100%; background: #848b94; color: #fff; display: flex; flex-direction: column; }
+        .k-p-top { padding: 20px; display: flex; justify-content: space-between; font-size: 20px; z-index: 5; }
+        .k-p-mid { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 80px; }
+        .k-p-img { width: 110px; height: 110px; border-radius: 40px; background: #eee; margin-bottom: 15px; object-fit: cover; border: 1px solid rgba(255,255,255,0.2); }
+        .k-p-name { font-size: 20px; font-weight: bold; margin-bottom: 50px; }
+        .k-p-footer { height: 120px; border-top: 1px solid rgba(255,255,255,0.2); display: flex; justify-content: center; align-items: center; gap: 50px; }
+        .p-btn { display: flex; flex-direction: column; align-items: center; font-size: 12px; gap: 8px; cursor: pointer; opacity: 0.9; }
+        .p-btn:hover { opacity: 1; }
     </style>
 </head>
 <body>
 
 <div id="auth-ui">
     <div id="login-form" class="auth-box">
-        <h2>STAR TALK</h2>
+        <h2 style="text-align:center; margin-bottom:10px;">STAR TALK</h2>
         <input type="text" id="loginId" placeholder="아이디">
         <input type="password" id="loginPw" placeholder="비밀번호">
-        <button class="btn-main" onclick="window.handleLogin()">로그인</button>
-        <button class="btn-sub" onclick="window.toggleAuth('signup')">새 계정 만들기</button>
+        <button onclick="window.handleLogin()" style="background:#000; color:#fff;">로그인</button>
+        <button onclick="window.toggleAuth('signup')" style="background:#f5f5f5;">회원가입</button>
     </div>
-
     <div id="signup-form" class="auth-box" style="display:none;">
-        <h2>회원가입</h2>
-        <input type="text" id="regId" placeholder="사용할 아이디">
+        <h2 style="text-align:center;">회원가입</h2>
+        <input type="text" id="regId" placeholder="아이디">
         <input type="password" id="regPw" placeholder="비밀번호">
-        <input type="text" id="regName" placeholder="이름(닉네임)">
-        <button class="btn-main" onclick="window.handleSignup()" style="background:var(--yellow); color:#000;">가입 완료</button>
-        <button class="btn-sub" onclick="window.toggleAuth('login')">이미 계정이 있나요? 로그인</button>
+        <input type="text" id="regName" placeholder="이름">
+        <button onclick="window.handleSignup()" style="background:var(--yellow); color:#000;">가입완료</button>
+        <button onclick="window.toggleAuth('login')" style="background:#f5f5f5;">돌아가기</button>
     </div>
 </div>
 
@@ -61,16 +67,27 @@
         <div class="nav-item" onclick="window.showPanel('profile', this)">⚙️</div>
     </nav>
 
-    <div id="panel-friend" class="content-panel active">
-        <div class="header">친구 <span onclick="window.addFriend()" style="cursor:pointer; font-size:20px;">+</span></div>
-        <div id="friend-list"></div>
-    </div>
+    <div class="content-container">
+        <div id="panel-friend" class="content-panel active">
+            <div class="header">친구 <span onclick="window.addFriend()" style="cursor:pointer;">+</span></div>
+            <div id="friend-list" style="overflow-y:auto;"></div>
+        </div>
 
-    <div id="panel-profile" class="content-panel">
-        <div class="k-profile">
-            <img id="my-p-img" class="k-p-img" src="https://via.placeholder.com/150">
-            <h3 id="my-p-name" style="margin-bottom:40px;">사용자</h3>
-            <button onclick="window.doLogout()" style="background:rgba(255,255,255,0.2); border:none; color:#fff; padding:10px 20px; border-radius:8px;">로그아웃</button>
+        <div id="panel-profile" class="content-panel">
+            <div class="k-profile">
+                <div class="k-p-top">
+                    <span onclick="window.showPanel('friend', document.querySelector('.nav-item'))" style="cursor:pointer;">✕</span>
+                    <span>🔔</span>
+                </div>
+                <div class="k-p-mid">
+                    <img id="my-p-img" class="k-p-img" src="https://via.placeholder.com/150">
+                    <div id="my-p-name" class="k-p-name">사용자</div>
+                </div>
+                <div class="k-p-footer">
+                    <div class="p-btn">💬<br>나와의 채팅</div>
+                    <div class="p-btn" onclick="window.doLogout()">🚪<br>로그아웃</div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -82,90 +99,66 @@
     const firebaseConfig = { apiKey: "AIzaSyAcBQ_Pyt4kdExDLGyNZJwWGbCdGDzVIjQ", databaseURL: "https://starchet-e9630-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "starchet-e9630" };
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    let myId, peer;
+    let myId;
 
-    // [페이지 로드 시 자동 로그인 확인]
     window.onload = () => {
-        const savedId = localStorage.getItem('st_auto_id');
-        if (savedId) {
-            myId = savedId;
-            startApp();
-        }
+        const saved = localStorage.getItem('st_auto_id');
+        if (saved) { myId = saved; startApp(); }
     };
 
-    // [화면 전환 로직]
-    window.toggleAuth = (mode) => {
-        document.getElementById('login-form').style.display = mode === 'login' ? 'flex' : 'none';
-        document.getElementById('signup-form').style.display = mode === 'signup' ? 'flex' : 'none';
+    window.toggleAuth = (m) => {
+        document.getElementById('login-form').style.display = m === 'login' ? 'flex' : 'none';
+        document.getElementById('signup-form').style.display = m === 'signup' ? 'flex' : 'none';
     };
 
-    // [회원가입 처리]
     window.handleSignup = async () => {
         const id = document.getElementById('regId').value.trim().toLowerCase();
         const pw = document.getElementById('regPw').value.trim();
         const name = document.getElementById('regName').value.trim();
-
-        if (!id || !pw || !name) return alert("모든 항목을 입력해주세요.");
-
-        const userRef = ref(db, `users/${id}`);
-        const snap = await get(userRef);
-        
-        if (snap.exists()) {
-            alert("이미 존재하는 아이디입니다.");
-        } else {
-            await set(userRef, { pw, name, id });
-            alert("가입이 완료되었습니다! 로그인해주세요.");
-            window.toggleAuth('login');
-        }
+        if(!id || !pw || !name) return alert("입력 확인!");
+        await set(ref(db, `users/${id}`), { pw, name, id });
+        alert("가입 완료!"); window.toggleAuth('login');
     };
 
-    // [로그인 처리]
     window.handleLogin = async () => {
         const id = document.getElementById('loginId').value.trim().toLowerCase();
         const pw = document.getElementById('loginPw').value.trim();
-
-        const userRef = ref(db, `users/${id}`);
-        const snap = await get(userRef);
-
+        const snap = await get(ref(db, `users/${id}`));
         if (snap.exists() && snap.val().pw === pw) {
-            myId = id;
-            localStorage.setItem('st_auto_id', myId); // 자동 로그인 저장
+            myId = id; localStorage.setItem('st_auto_id', myId);
             startApp();
-        } else {
-            alert("아이디 또는 비밀번호가 틀렸습니다.");
-        }
+        } else { alert("정보 불일치!"); }
     };
 
     function startApp() {
         document.getElementById('auth-ui').style.display = 'none';
         document.getElementById('main-app').style.display = 'flex';
-        
-        // 내 정보 로드
         onValue(ref(db, `users/${myId}`), snap => {
-            if(snap.exists()){
-                document.getElementById('my-p-name').innerText = snap.val().name;
-            }
+            if(snap.exists()) document.getElementById('my-p-name').innerText = snap.val().name;
         });
-
-        peer = new Peer(myId);
         loadFriends();
     }
 
-    // [친구 및 설정 로직]
+    // [화면 전환 함수 - 핵심]
+    window.showPanel = (panelId, menuEl) => {
+        // 모든 패널 숨기기
+        document.querySelectorAll('.content-panel').forEach(p => p.classList.remove('active'));
+        // 선택한 패널 보이기
+        document.getElementById(`panel-${panelId}`).classList.add('active');
+        
+        // 네비게이션 아이콘 활성화 상태 변경
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        if(menuEl) menuEl.classList.add('active');
+    };
+
     window.addFriend = () => {
-        const fid = prompt("추가할 친구 ID:").trim().toLowerCase();
-        if(fid && fid !== myId) {
-            update(ref(db), {
-                [`friends/${myId}/${fid}`]: {id: fid},
-                [`friends/${fid}/${myId}`]: {id: myId}
-            });
-        }
+        const fid = prompt("ID:").trim().toLowerCase();
+        if(fid && fid !== myId) update(ref(db), { [`friends/${myId}/${fid}`]:{id:fid}, [`friends/${fid}/${myId}`]:{id:myId} });
     };
 
     function loadFriends() {
         onValue(ref(db, `friends/${myId}`), snap => {
-            const list = document.getElementById('friend-list');
-            list.innerHTML = "";
+            const list = document.getElementById('friend-list'); list.innerHTML = "";
             if(snap.val()) Object.keys(snap.val()).forEach(fid => {
                 const d = document.createElement('div');
                 d.style = "padding:15px; border-bottom:1px solid #eee; cursor:pointer;";
@@ -175,17 +168,7 @@
         });
     }
 
-    window.doLogout = () => {
-        localStorage.removeItem('st_auto_id');
-        location.reload();
-    };
-
-    window.showPanel = (t, el) => {
-        document.querySelectorAll('.content-panel').forEach(p => p.classList.remove('active'));
-        document.getElementById(`panel-${t}`).classList.add('active');
-        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-        el.classList.add('active');
-    };
+    window.doLogout = () => { localStorage.removeItem('st_auto_id'); location.reload(); };
 </script>
 </body>
 </html>
