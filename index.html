@@ -1,77 +1,232 @@
-<div class="footer" id="bottom-bar">
-    <label for="file-in" style="cursor:pointer; font-size:20px;">📎</label>
-    <input type="file" id="file-in" style="display:none;" onchange="uploadFile(this)">
-    <span onclick="makeCall(false)" style="cursor:pointer; font-size:20px;">📞</span>
-    <span onclick="makeCall(true)" style="cursor:pointer; font-size:20px;">📹</span>
-    <input type="text" id="msg-input" placeholder="메시지 입력..." onkeypress="if(event.keyCode==13) sendMsg()">
-    <button onclick="sendMsg()" style="border:none; background:none; font-weight:bold; color:var(--dark);">전송</button>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STAR TALK PREMIUM</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        :root { --sidebar: #2c2c2e; --chat-bg: #f4f4f7; --point: #fee500; --text: #333; }
+        body { margin: 0; font-family: 'Pretendard', sans-serif; display: flex; height: 100vh; overflow: hidden; background: #eee; }
+        
+        /* 로그인 화면 */
+        #login-ui { position: fixed; inset: 0; background: var(--sidebar); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
+        .login-box { background: #3a3a3c; padding: 40px; border-radius: 20px; width: 300px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .login-box input { width: 100%; padding: 12px; margin: 10px 0; border: none; border-radius: 8px; background: #555; color: white; box-sizing: border-box; }
+        .login-box button { width: 100%; padding: 12px; background: var(--point); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
+        /* 사이드바 (프로필 & 친구목록) */
+        nav { width: 300px; background: var(--sidebar); color: white; display: flex; flex-direction: column; }
+        .my-profile { padding: 30px 20px; text-align: center; border-bottom: 1px solid #444; }
+        .profile-img { width: 100px; height: 100px; border-radius: 40px; background: #555; margin: 0 auto 15px; cursor: pointer; position: relative; overflow: hidden; border: 2px solid var(--point); }
+        .profile-img img { width: 100%; height: 100%; object-fit: cover; }
+        .profile-img:after { content: 'EDIT'; position: absolute; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; opacity: 0; transition: 0.3s; font-size: 12px; }
+        .profile-img:hover:after { opacity: 1; }
+        
+        .f-list { flex: 1; overflow-y: auto; }
+        .f-item { padding: 15px 20px; display: flex; align-items: center; gap: 15px; cursor: pointer; transition: 0.2s; }
+        .f-item:hover { background: #3d3d3f; }
+        .f-item img { width: 45px; height: 45px; border-radius: 15px; background: #666; }
+
+        /* 메인 채팅 구역 */
+        main { flex: 1; display: flex; flex-direction: column; background: var(--chat-bg); }
+        header { padding: 15px 25px; background: white; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
+        #chat-view { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+        
+        /* 말풍선 */
+        .msg { max-width: 60%; padding: 10px 15px; border-radius: 15px; font-size: 14px; line-height: 1.5; }
+        .me { align-self: flex-end; background: var(--point); border-top-right-radius: 0; color: #000; }
+        .o { align-self: flex-start; background: white; border-top-left-radius: 0; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+
+        /* 하단 입력바 */
+        footer { padding: 20px; background: white; display: flex; gap: 15px; align-items: center; }
+        .input-wrap { flex: 1; background: #f0f0f2; border-radius: 10px; padding: 5px 15px; display: flex; align-items: center; }
+        footer input { border: none; background: none; flex: 1; padding: 10px; outline: none; }
+        .tool-btn { font-size: 20px; cursor: pointer; color: #666; transition: 0.2s; }
+        .tool-btn:hover { color: var(--text); }
+
+        /* 통화 레이어 */
+        #call-ui { position: fixed; inset: 0; background: #000; z-index: 2000; display: none; }
+        #rv { width: 100%; height: 100%; object-fit: cover; }
+        #lv { width: 120px; height: 160px; position: absolute; top: 20px; right: 20px; border-radius: 15px; border: 2px solid white; object-fit: cover; }
+        .end-call { position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); background: #ff3b30; color: white; padding: 15px 40px; border-radius: 30px; border: none; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div id="login-ui">
+    <div class="login-box">
+        <h1 style="color:var(--point)">STAR TALK</h1>
+        <input type="text" id="myId" placeholder="아이디">
+        <input type="password" id="myPw" placeholder="비밀번호">
+        <button onclick="login()">로그인</button>
+    </div>
+</div>
+
+<nav>
+    <div class="my-profile">
+        <label class="profile-img">
+            <img id="my-pic-img" src="">
+            <input type="file" hidden onchange="changeProfile(this)">
+        </label>
+        <h3 id="h-id" style="margin: 10px 0 5px;">User</h3>
+        <p style="font-size: 12px; color: #888;">상태 메시지를 입력하세요</p>
+    </div>
+    <div style="padding: 10px 20px; display: flex; justify-content: space-between;">
+        <span>친구</span>
+        <span onclick="addFriend()" style="cursor:pointer; color:var(--point);">+ 추가</span>
+    </div>
+    <div class="f-list" id="f-list"></div>
+</nav>
+
+<main>
+    <header>
+        <h2 id="target-name" style="margin:0; font-size: 18px;">대상을 선택하세요</h2>
+        <div style="display: flex; gap: 20px;">
+            <span class="tool-btn" onclick="startCall()">📹</span>
+            <span class="tool-btn">⚙️</span>
+        </div>
+    </header>
+
+    <div id="chat-view"></div>
+
+    <footer id="chat-footer" style="visibility: hidden;">
+        <label class="tool-btn">📎<input type="file" hidden onchange="upFile(this)"></label>
+        <div class="input-wrap">
+            <input type="text" id="m-in" placeholder="메시지를 입력하세요..." onkeypress="if(event.keyCode==13) send()">
+            <button onclick="send()" style="border:none; background:none; font-weight:bold; cursor:pointer;">전송</button>
+        </div>
+    </footer>
+</nav>
+
+<div id="call-ui">
+    <video id="rv" autoplay></video>
+    <video id="lv" autoplay muted></video>
+    <button class="end-call" onclick="location.reload()">통화 종료</button>
 </div>
 
 <script type="module">
-    // 1. Storage 라이브러리 추가 호출
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, set, get, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
     import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
-    // 유저님의 설정값
-    const config = { /* ...동일... */ };
-    const app = initializeApp(config);
-    const db = getDatabase(app);
-    const storage = getStorage(app); // 스토리지 초기화
-
-    // 2. 파일 업로드 로직
-    window.uploadFile = async (input) => {
-        const file = input.files[0];
-        if (!file) return;
-
-        const status = document.getElementById('header-id');
-        const originalText = status.innerText;
-        status.innerText = "파일 업로드 중...";
-
-        try {
-            // 파일 경로 설정 (파일명에 시간을 붙여 중복 방지)
-            const fileRef = sRef(storage, `uploads/${Date.now()}_${file.name}`);
-            
-            // 업로드 후 URL 가져오기
-            const snapshot = await uploadBytes(fileRef, file);
-            const url = await getDownloadURL(snapshot.ref);
-
-            // 채팅방에 파일 URL 전송
-            const rid = [myId, targetId].sort().join("_");
-            push(ref(db, `messages/${rid}`), { 
-                text: url, 
-                sender: myId, 
-                type: file.type.includes('image') ? 'image' : 'file',
-                fileName: file.name
-            });
-
-            status.innerText = originalText;
-        } catch (e) {
-            alert("파일 전송 실패: " + e.message);
-            status.innerText = originalText;
-        }
+    const conf = {
+        apiKey: "AIzaSyAcBQ_Pyt4kdExDLGyNZJwWGbCdGDzVIjQ",
+        authDomain: "starchet-e9630.firebaseapp.com",
+        databaseURL: "https://starchet-e9630-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "starchet-e9630",
+        storageBucket: "starchet-e9630.firebasestorage.app",
+        messagingSenderId: "532571302538",
+        appId: "1:532571302538:web:73ad808e560947ea02db73"
     };
 
-    // 3. 메시지 렌더링 수정 (이미지면 그림으로 보여주기)
-    function renderMessages(snap) {
-        const box = document.getElementById('chat-view'); 
-        box.innerHTML = "";
-        if(snap.val()) {
-            Object.values(snap.val()).forEach(m => {
-                const d = document.createElement('div');
-                d.className = `bubble ${m.sender === myId ? 'me' : 'o'}`;
-                
-                if (m.type === 'image') {
-                    d.innerHTML = `<img src="${m.text}" style="max-width:200px; border-radius:10px; cursor:pointer;" onclick="window.open('${m.text}')">`;
-                } else if (m.type === 'file') {
-                    d.innerHTML = `📁 <a href="${m.text}" target="_blank" style="color:inherit;">${m.fileName}</a>`;
-                } else {
-                    d.innerText = m.text;
-                }
-                box.appendChild(d);
+    const app = initializeApp(conf);
+    const db = getDatabase(app);
+    const storage = getStorage(app);
+    let myId, targetId, peer, myPic = "";
+
+    window.login = async () => {
+        myId = document.getElementById('myId').value.trim();
+        const pw = document.getElementById('myPw').value;
+        if(!myId) return;
+
+        const snap = await get(ref(db, `auth/${myId}`));
+        if(!snap.exists() || snap.val().pw === pw) {
+            if(!snap.exists()) await set(ref(db, `auth/${myId}`), {pw, pic: ""});
+            myPic = snap.val()?.pic || "";
+            document.getElementById('my-pic-img').src = myPic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+            
+            peer = new Peer(myId);
+            peer.on('open', () => {
+                document.getElementById('login-ui').style.display='none';
+                document.getElementById('h-id').innerText = myId;
+                loadList();
+                listenCall();
             });
-            box.scrollTop = box.scrollHeight;
-        }
+        } else alert("비번 틀림");
+    };
+
+    // 프로필 사진 변경
+    window.changeProfile = async (input) => {
+        const file = input.files[0];
+        const sR = sRef(storage, `profiles/${myId}`);
+        await uploadBytes(sR, file);
+        const url = await getDownloadURL(sR);
+        await set(ref(db, `auth/${myId}/pic`), url);
+        document.getElementById('my-pic-img').src = url;
+    };
+
+    window.addFriend = () => {
+        const fid = prompt("친구 ID:");
+        if(fid) set(ref(db, `users/${myId}/f/${fid}`), {id:fid});
+    };
+
+    function loadList() {
+        onValue(ref(db, `users/${myId}/f`), async s => {
+            const list = document.getElementById('f-list'); list.innerHTML = "";
+            if(s.val()) {
+                for(let fid of Object.keys(s.val())) {
+                    const fInfo = await get(ref(db, `auth/${fid}`));
+                    const d = document.createElement('div');
+                    d.className = 'f-item';
+                    d.innerHTML = `<img src="${fInfo.val()?.pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}"> <b>${fid}</b>`;
+                    d.onclick = () => openChat(fid);
+                    list.appendChild(d);
+                }
+            }
+        });
     }
-    // (기존 openChat 내의 onValue 부분에서 renderMessages를 호출하도록 수정)
+
+    function openChat(fid) {
+        targetId = fid;
+        document.getElementById('target-name').innerText = fid;
+        document.getElementById('chat-footer').style.visibility = 'visible';
+        const rid = [myId, fid].sort().join("_");
+        onValue(ref(db, `msgs/${rid}`), s => {
+            const b = document.getElementById('chat-view'); b.innerHTML="";
+            if(s.val()) Object.values(s.val()).forEach(m => {
+                const d = document.createElement('div'); d.className=`msg ${m.s===myId?'me':'o'}`;
+                d.innerHTML = m.t.includes('http') ? `<img src="${m.t}" style="max-width:200px;border-radius:10px;">` : m.t;
+                b.appendChild(d);
+            });
+            b.scrollTop = b.scrollHeight;
+        });
+    }
+
+    window.send = () => {
+        const i = document.getElementById('m-in'); if(!i.value) return;
+        const rid = [myId, targetId].sort().join("_");
+        push(ref(db, `msgs/${rid}`), {t: i.value, s: myId}); i.value="";
+    };
+
+    window.upFile = async (i) => {
+        const f = i.files[0];
+        const sR = sRef(storage, `files/${Date.now()}`);
+        const snap = await uploadBytes(sR, f);
+        const url = await getDownloadURL(snap.ref);
+        const rid = [myId, targetId].sort().join("_");
+        push(ref(db, `msgs/${rid}`), {t: url, s: myId});
+    };
+
+    window.startCall = async () => {
+        const s = await navigator.mediaDevices.getUserMedia({video:true, audio:true});
+        document.getElementById('call-ui').style.display='block';
+        document.getElementById('lv').srcObject=s;
+        const c = peer.call(targetId, s);
+        c.on('stream', rs => document.getElementById('rv').srcObject=rs);
+    };
+
+    function listenCall() {
+        peer.on('call', async c => {
+            if(confirm(c.peer + "님의 전화?")) {
+                const s = await navigator.mediaDevices.getUserMedia({video:true, audio:true});
+                document.getElementById('call-ui').style.display='block';
+                document.getElementById('lv').srcObject=s;
+                c.answer(s);
+                c.on('stream', rs => document.getElementById('rv').srcObject=rs);
+            }
+        });
+    }
 </script>
+</body>
+</html>
