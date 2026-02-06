@@ -10,64 +10,65 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', sans-serif; }
         body, html { height: 100%; width: 100%; overflow: hidden; background: var(--bg); color: var(--text); }
 
-        /* 로그인 UI */
+        /* [로그인 UI] */
         #auth-ui { position: fixed; inset: 0; background: #000; z-index: 10000; display: flex; align-items: center; justify-content: center; }
         .auth-card { width: 320px; text-align: center; background: rgba(255,255,255,0.1); padding: 40px 20px; border-radius: 30px; }
-        input { width: 100%; padding: 15px; margin-bottom: 10px; border-radius: 12px; border: none; outline: none; }
-        .btn-main { width: 100%; padding: 15px; background: var(--yellow); border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
-
-        /* 메인 앱 레이아웃 */
-        #main-app { display: none; height: 100%; }
+        .auth-card h2 { color: #fff; margin-bottom: 25px; }
+        /* 입력창 스타일 */
+        .auth-card input { width: 100%; padding: 15px; margin-bottom: 12px; border-radius: 12px; border: none; outline: none; background: #fff; color: #000; font-size: 16px; }
+        .btn-main { width: 100%; padding: 15px; background: var(--yellow); border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 16px; margin-bottom: 10px; }
+        
+        /* [메인/채팅 레이아웃] */
+        #main-app { display: none; height: 100%; flex-direction: row; }
         nav { width: 70px; background: #000; display: flex; flex-direction: column; align-items: center; padding-top: 20px; }
         .content { flex: 1; background: #fff; color: #000; border-radius: 25px 0 0 0; overflow-y: auto; }
-
-        /* 채팅 UI */
         #chat-window { position: fixed; inset: 0 0 0 70px; background: var(--chat-bg); display: none; flex-direction: column; z-index: 900; }
         #chat-view { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 8px; }
         .bubble { padding: 10px; border-radius: 12px; font-size: 14px; max-width: 80%; }
         .me { align-self: flex-end; background: var(--yellow); }
         .you { align-self: flex-start; background: #fff; }
-        .bubble img { max-width: 100%; border-radius: 8px; cursor: pointer; }
         .input-bar { padding: 10px; background: #fff; display: flex; gap: 8px; }
+        #msg-input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 20px; outline: none; }
 
-        /* 통화 UI */
+        /* [통화 UI] */
         #call-ui { position: fixed; inset: 0; background: #000; z-index: 5000; display: none; }
         video { width: 100%; height: 100%; object-fit: cover; }
         #local-video { position: absolute; top: 20px; right: 20px; width: 100px; height: 140px; border: 2px solid #fff; border-radius: 10px; }
-        .end-btn { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); background: red; color: #fff; padding: 15px; border-radius: 50%; cursor: pointer; }
+        .end-btn { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); background: red; color: #fff; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 24px; }
     </style>
 </head>
 <body>
 
 <div id="auth-ui">
     <div class="auth-card">
-        <h2 style="color:#fff; margin-bottom:20px;">STAR TALK</h2>
-        <input type="text" id="authId" placeholder="아이디">
-        <input type="password" id="authPw" placeholder="비밀번호">
-        <button class="btn-main" onclick="window.handleAuth('login')">로그인</button>
-        <button class="btn-main" style="background:#444; color:#fff; margin-top:10px;" onclick="window.handleAuth('signup')">회원가입</button>
+        <h2>STAR TALK</h2>
+        <input type="text" id="loginId" placeholder="아이디">
+        <input type="password" id="loginPw" placeholder="비밀번호">
+        
+        <button class="btn-main" onclick="window.doLogin()">로그인</button>
+        <button class="btn-main" style="background: #444; color: #fff;" onclick="window.doSignup()">회원가입</button>
     </div>
 </div>
 
-<div id="main-app" style="display: flex;">
-    <nav><div style="font-size:24px; color:var(--yellow);">👤</div></nav>
+<div id="main-app">
+    <nav><div style="font-size:24px; color:var(--yellow); cursor:pointer;" onclick="window.doLogout()">🚪</div></nav>
     <div class="content">
-        <div style="padding:20px; font-weight:bold; border-bottom:1px solid #eee;">친구 <span onclick="window.addFriend()" style="float:right; cursor:pointer;">+</span></div>
+        <div style="padding:20px; font-weight:bold; border-bottom:1px solid #eee;">친구 목록 <span onclick="window.addFriend()" style="float:right; cursor:pointer; color:var(--yellow); background:#000; padding:0 8px; border-radius:50%;">+</span></div>
         <div id="friend-list"></div>
     </div>
 </div>
 
 <div id="chat-window">
-    <div style="padding:15px; display:flex; align-items:center; background:rgba(255,255,255,0.2);">
+    <div style="padding:15px; background:rgba(255,255,255,0.2); display:flex; align-items:center;">
         <button onclick="window.closeChat()">◀</button>
-        <b id="chat-name" style="margin-left:10px;">채팅</b>
-        <button onclick="window.initCall(true)" style="margin-left:auto;">🎥</button>
+        <b id="chat-target" style="margin-left:10px;">채팅</b>
+        <button onclick="window.initCall(true)" style="margin-left:auto;">🎥 영상통화</button>
     </div>
     <div id="chat-view"></div>
     <div class="input-bar">
         <label style="font-size:20px; cursor:pointer;">🖼️<input type="file" hidden onchange="window.handleFile(this)"></label>
         <input type="text" id="msg-input" placeholder="메시지 입력..." onkeypress="if(event.keyCode==13) window.sendMsg()">
-        <button onclick="window.sendMsg()" style="background:var(--yellow); border:none; padding:10px; border-radius:10px;">전송</button>
+        <button onclick="window.sendMsg()" style="background:var(--yellow); border:none; padding:10px 15px; border-radius:10px; font-weight:bold;">전송</button>
     </div>
 </div>
 
@@ -81,6 +82,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, set, get, update, onValue, push, off, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
+    // Firebase 설정
     const firebaseConfig = { 
         apiKey: "AIzaSyAcBQ_Pyt4kdExDLGyNZJwWGbCdGDzVIjQ", 
         databaseURL: "https://starchet-e9630-default-rtdb.asia-southeast1.firebasedatabase.app", 
@@ -90,19 +92,41 @@
     const db = getDatabase(app);
     let myId, activeRid, selFid, peer, myStream, currentCall;
 
-    window.handleAuth = async (type) => {
-        const id = document.getElementById('authId').value.trim().toLowerCase();
-        const pw = document.getElementById('authPw').value.trim();
-        if(!id || !pw) return alert("입력하세요");
+    const alertSound = new Audio('https://t1.daumcdn.net/kakaotalk/public/sound/talk.mp3');
+
+    // [회원가입 기능]
+    window.doSignup = async () => {
+        const id = document.getElementById('loginId').value.trim().toLowerCase();
+        const pw = document.getElementById('loginPw').value.trim();
+        if(!id || !pw) return alert("아이디와 비번을 모두 입력하세요!");
+
         const userRef = ref(db, `users/${id}`);
         const snap = await get(userRef);
-        if(type === 'signup') {
-            if(snap.exists()) return alert("중복 아이디");
-            await set(userRef, { id, pw, name: id }); alert("가입 완료");
+        if(snap.exists()) return alert("이미 존재하는 아이디입니다.");
+
+        await set(userRef, { id, pw, name: id });
+        alert("가입 성공! 이제 로그인을 눌러주세요.");
+    };
+
+    // [로그인 기능]
+    window.doLogin = async () => {
+        const id = document.getElementById('loginId').value.trim().toLowerCase();
+        const pw = document.getElementById('loginPw').value.trim();
+        
+        if(!id || !pw) {
+            alert("아이디와 비밀번호를 입력해주세요.");
+            return;
+        }
+
+        const userRef = ref(db, `users/${id}`);
+        const snap = await get(userRef);
+
+        if(snap.exists() && snap.val().pw === pw) {
+            myId = id;
+            localStorage.setItem('st_id', id);
+            startApp();
         } else {
-            if(snap.exists() && snap.val().pw === pw) {
-                myId = id; localStorage.setItem('st_id', id); startApp();
-            } else alert("정보 불일치");
+            alert("아이디 또는 비밀번호가 틀렸습니다.");
         }
     };
 
@@ -114,7 +138,8 @@
 
         peer = new Peer(myId);
         peer.on('call', async (call) => {
-            if(confirm("전화 수신! 받으시겠습니까?")) {
+            alertSound.play().catch(()=>{});
+            if(confirm("📞 전화 수신! 받으시겠습니까?")) {
                 myStream = await navigator.mediaDevices.getUserMedia({audio:true, video:call.metadata.video});
                 call.answer(myStream);
                 handleCall(call);
@@ -123,33 +148,27 @@
         loadFriends();
     }
 
-    // [중요: 튕김 방지 채팅창 오픈 로직]
+    // 채팅 관련
     window.openChat = (fid) => {
-        try {
-            if(!myId || !fid) return;
-            // 이전 리스너 제거 (튕김 방지 핵심)
-            if(activeRid) off(ref(db, `msgs/${activeRid}`));
+        if(activeRid) off(ref(db, `msgs/${activeRid}`));
+        selFid = fid;
+        activeRid = [myId, fid].sort().join('_');
+        document.getElementById('chat-target').innerText = fid;
+        document.getElementById('chat-window').style.display = 'flex';
 
-            selFid = fid;
-            activeRid = [myId, fid].sort().join('_');
-            document.getElementById('chat-name').innerText = fid;
-            document.getElementById('chat-window').style.display = 'flex';
-
-            onValue(ref(db, `msgs/${activeRid}`), snap => {
-                const v = document.getElementById('chat-view');
-                v.innerHTML = "";
-                if(snap.exists()){
-                    Object.values(snap.val()).forEach(m => {
-                        const div = document.createElement('div');
-                        div.className = `bubble ${m.s === myId ? 'me' : 'you'}`;
-                        if(m.type === 'file') div.innerHTML = `<img src="${m.file}" onclick="window.open(this.src)">`;
-                        else div.innerText = m.t;
-                        v.appendChild(div);
-                    });
-                }
-                v.scrollTop = v.scrollHeight;
-            });
-        } catch(e) { console.error("채팅방 오류:", e); }
+        onValue(ref(db, `msgs/${activeRid}`), snap => {
+            const v = document.getElementById('chat-view'); v.innerHTML = "";
+            if(snap.exists()){
+                Object.values(snap.val()).forEach(m => {
+                    const div = document.createElement('div');
+                    div.className = `bubble ${m.s === myId ? 'me' : 'you'}`;
+                    if(m.type === 'file') div.innerHTML = `<img src="${m.file}" onclick="window.open(this.src)">`;
+                    else div.innerText = m.t;
+                    v.appendChild(div);
+                });
+            }
+            v.scrollTop = v.scrollHeight;
+        });
     };
 
     window.sendMsg = () => {
@@ -162,18 +181,19 @@
     window.handleFile = (el) => {
         const file = el.files[0]; if(!file) return;
         const reader = new FileReader();
-        reader.onload = () => push(ref(db, `msgs/${activeRid}`), { s: myId, type: 'file', file: reader.result, name: file.name });
+        reader.onload = () => push(ref(db, `msgs/${activeRid}`), { s: myId, type: 'file', file: reader.result });
         reader.readAsDataURL(file);
         el.value = "";
     };
 
+    // 통화 관련
     window.initCall = async (video) => {
         try {
             myStream = await navigator.mediaDevices.getUserMedia({audio:true, video:video});
             document.getElementById('local-video').srcObject = myStream;
             const call = peer.call(selFid, myStream, {metadata:{video}});
             handleCall(call);
-        } catch(e) { alert("권한 오류"); }
+        } catch(e) { alert("카메라 권한 오류"); }
     };
 
     function handleCall(call) {
@@ -183,6 +203,7 @@
             const rv = document.getElementById('remote-video');
             rv.srcObject = s; rv.disablePictureInPicture = true;
         });
+        call.on('close', () => window.endCall());
     }
 
     window.endCall = () => {
@@ -192,7 +213,7 @@
     };
 
     window.addFriend = () => {
-        const f = prompt("친구 ID:");
+        const f = prompt("친구 아이디 입력:");
         if(f && f !== myId) update(ref(db), {[`friends/${myId}/${f}`]:true, [`friends/${f}/${myId}`]:true});
     };
 
@@ -202,7 +223,7 @@
             if(snap.exists()) {
                 Object.keys(snap.val()).forEach(fid => {
                     const d = document.createElement('div');
-                    d.style.padding = "15px"; d.style.borderBottom = "1px solid #eee";
+                    d.style.padding = "15px"; d.style.borderBottom = "1px solid #eee"; d.style.cursor = "pointer";
                     d.innerHTML = `<b>${fid}</b>`;
                     d.onclick = () => window.openChat(fid);
                     list.appendChild(d);
@@ -211,11 +232,8 @@
         });
     }
 
-    window.closeChat = () => {
-        if(activeRid) off(ref(db, `msgs/${activeRid}`));
-        document.getElementById('chat-window').style.display = 'none';
-    };
-
+    window.closeChat = () => document.getElementById('chat-window').style.display = 'none';
+    window.doLogout = () => { localStorage.clear(); location.reload(); };
     if(localStorage.getItem('st_id')) { myId = localStorage.getItem('st_id'); startApp(); }
 </script>
 </body>
