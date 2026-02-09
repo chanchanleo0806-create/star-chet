@@ -3,74 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StarChat - Manager Edition</title>
+    <title>StarChat - All-in-One Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .server-icon { @apply w-12 h-12 bg-[#313338] text-[#23A559] rounded-[24px] flex items-center justify-center hover:bg-[#23A559] hover:text-white transition-all cursor-pointer shadow-lg; }
+        .server-icon { @apply w-12 h-12 bg-[#313338] text-[#23A559] rounded-[24px] flex items-center justify-center hover:bg-[#23A559] hover:text-white transition-all cursor-pointer; }
         .active-server { border-radius: 16px !important; background-color: #5865F2 !important; color: white !important; }
-        .channel-item { @apply flex items-center px-2 py-1.5 rounded cursor-pointer text-[#949BA4] hover:bg-[#35373C] hover:text-white transition-all text-sm mb-[2px]; }
-        .active-channel { @apply bg-[#3F4147] text-white !important; font-weight: bold; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: #1e1f22; border-radius: 10px; }
+        .channel-item { @apply flex items-center px-2 py-1 rounded cursor-pointer text-[#949BA4] hover:bg-[#35373C] hover:text-white transition-all text-sm mb-[2px]; }
+        .active-channel { @apply bg-[#3F4147] text-white !important; }
     </style>
 </head>
 <body class="bg-[#313338] text-[#DBDEE1] font-sans overflow-hidden">
 
 <div class="flex h-screen w-full">
     <nav class="w-[72px] bg-[#1E1F22] flex flex-col items-center py-3 space-y-2 shrink-0">
-        <div id="login-btn" class="server-icon overflow-hidden border-2 border-transparent">
+        <div id="login-btn" class="server-icon overflow-hidden border-2 border-transparent border-gray-600">
             <span id="user-status" class="text-[10px] font-bold">LOG IN</span>
         </div>
         <div class="w-8 h-[2px] bg-[#35363C] rounded-full mx-auto my-1"></div>
-        <div id="server-list" class="flex flex-col space-y-2 w-full items-center">
-            <div onclick="selectServer('official', 'StarChat 공식서버', 'admin')" class="server-icon active-server">S</div>
-        </div>
+        <div id="server-list" class="flex flex-col space-y-2 w-full items-center"></div>
         <button id="add-server-btn" class="server-icon text-2xl" title="서버 추가">+</button>
     </nav>
 
     <aside class="w-60 bg-[#2B2D31] flex flex-col shrink-0 border-r border-[#1E1F22]">
-        <div id="active-server-name" class="h-12 px-4 flex items-center shadow-md font-bold text-white border-b border-[#1E1F22]">공식서버</div>
-        
-        <div class="flex-1 overflow-y-auto">
-            <div class="p-4">
-                <div class="flex items-center justify-between text-[11px] font-bold text-[#949BA4] uppercase mb-2 px-1 tracking-wider">
-                    <span>채널 (방 안의 방)</span>
-                    <button id="add-channel-btn" class="hidden hover:text-white text-lg font-light" title="채널 추가">+</button>
-                </div>
-                <div id="channel-list"></div>
+        <div id="active-server-name" class="h-12 px-4 flex items-center shadow-md font-bold text-white border-b border-[#1E1F22]">서버 선택</div>
+        <div class="flex-1 overflow-y-auto p-4">
+            <div class="flex items-center justify-between text-[11px] font-bold text-[#949BA4] uppercase mb-2 px-1">
+                <span>방 내부 채널</span>
+                <button id="add-channel-btn" class="hidden hover:text-white text-lg">+</button>
             </div>
+            <div id="channel-list" class="mb-6"></div>
 
-            <div class="p-4 border-t border-[#35363C]">
-                <div class="text-[11px] font-bold text-[#949BA4] uppercase mb-2 px-1 tracking-wider">접속 유저</div>
-                <div id="user-list" class="space-y-1"></div>
-            </div>
+            <div class="text-[11px] font-bold text-[#949BA4] uppercase mb-2 px-1">접속 유저</div>
+            <div id="user-list" class="space-y-1"></div>
         </div>
-
         <div id="user-footer" class="p-3 bg-[#232428] hidden">
-            <button onclick="editProfile()" class="w-full text-[10px] bg-[#4E5058] hover:bg-[#6D6F78] py-1 rounded text-white mb-2 transition-all">이름/사진 수정</button>
+            <button onclick="editProfile()" class="w-full text-[10px] bg-[#4E5058] hover:bg-[#6D6F78] py-1 rounded text-white mb-2">이름/사진 수정</button>
             <div class="flex items-center">
-                <img id="my-img" class="w-8 h-8 rounded-full bg-gray-700 mr-2 border border-gray-600">
-                <div class="flex flex-col overflow-hidden">
-                    <span id="my-name" class="font-bold text-xs truncate">비로그인</span>
-                    <span class="text-[9px] text-gray-500">Online</span>
-                </div>
+                <img id="my-img" class="w-8 h-8 rounded-full bg-gray-600 mr-2">
+                <span id="my-name" class="font-bold text-xs truncate">유저</span>
             </div>
         </div>
     </aside>
 
-    <main class="flex-1 flex flex-col min-w-0 bg-[#313338]">
+    <main class="flex-1 flex flex-col bg-[#313338]">
         <header class="h-12 px-4 flex items-center shadow-sm border-b border-[#1E1F22] font-bold text-white shrink-0">
             <span class="text-[#80848E] mr-2 text-xl font-light">#</span>
-            <span id="active-channel-name">일반</span>
+            <span id="active-channel-name">채널 선택</span>
         </header>
-        
-        <div id="chat-box" class="flex-1 p-4 overflow-y-auto space-y-4">
-            <div class="text-center text-gray-500 mt-20 italic">로그인 후 대화를 시작하세요.</div>
-        </div>
-
-        <form id="chat-form" class="px-4 pb-6 shrink-0">
-            <div class="bg-[#383A40] rounded-lg p-3 flex items-center shadow-inner">
-                <input id="chat-input" type="text" placeholder="메시지 입력..." class="bg-transparent flex-1 outline-none text-[#DBDEE1] text-sm" disabled autocomplete="off">
+        <div id="chat-box" class="flex-1 p-4 overflow-y-auto space-y-4"></div>
+        <form id="chat-form" class="p-4 shrink-0">
+            <div class="bg-[#383A40] rounded-lg p-3">
+                <input id="chat-input" type="text" placeholder="메시지를 입력하세요..." class="bg-transparent w-full outline-none" disabled autocomplete="off">
             </div>
         </form>
     </main>
@@ -81,7 +64,6 @@
     import { getDatabase, ref, push, set, onValue, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-    // 보내주신 설정값 적용
     const firebaseConfig = {
         apiKey: "AIzaSyAcBQ_Pyt4kdExDLGyNZJwWGbCdGDzVIjQ",
         authDomain: "starchet-e9630.firebaseapp.com",
@@ -89,8 +71,7 @@
         projectId: "starchet-e9630",
         storageBucket: "starchet-e9630.firebasestorage.app",
         messagingSenderId: "532571302538",
-        appId: "1:532571302538:web:ee6b941e1a70bcaa02db73",
-        measurementId: "G-Z7PBGDJ5KF"
+        appId: "1:532571302538:web:ee6b941e1a70bcaa02db73"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -99,97 +80,12 @@
     const provider = new GoogleAuthProvider();
 
     let currentUser = null;
-    let activeSid = "official"; 
-    let activeCid = "default";
+    let activeSid = null;
+    let activeCid = null;
 
-    // 로그인 유지 설정
+    // 세션 유지 (깃허브 튕김 방지)
     setPersistence(auth, browserLocalPersistence);
 
-    // [기능] 서버 입장
-    window.selectServer = (sid, name, ownerId) => {
-        activeSid = sid;
-        document.getElementById('active-server-name').innerText = name;
-        
-        // 방장 여부에 따른 채널 추가 권한
-        const isAdmin = (ownerId === auth.currentUser?.uid || ownerId === 'admin');
-        document.getElementById('add-channel-btn').style.display = isAdmin ? 'block' : 'none';
-        
-        // 내 접속 정보 갱신
-        if(auth.currentUser) {
-            set(ref(db, `presence/${sid}/${auth.currentUser.uid}`), {
-                name: currentUser.customName || auth.currentUser.displayName,
-                photo: currentUser.customPhoto || auth.currentUser.photoURL,
-                uid: auth.currentUser.uid
-            });
-        }
-
-        // 채널 목록 불러오기
-        onValue(ref(db, `channels/${sid}`), (snap) => {
-            const list = document.getElementById('channel-list');
-            list.innerHTML = '';
-            if(!snap.exists() && isAdmin) {
-                set(push(ref(db, `channels/${sid}`)), { name: "일반채팅" });
-            }
-            snap.forEach(c => {
-                const cid = c.key;
-                const cname = c.val().name;
-                const el = document.createElement('div');
-                el.className = `channel-item ${activeCid === cid ? 'active-channel' : ''}`;
-                el.innerHTML = `<span class="mr-2 text-gray-500">#</span> ${cname}`;
-                el.onclick = () => {
-                    activeCid = cid;
-                    document.getElementById('active-channel-name').innerText = cname;
-                    document.getElementById('chat-input').disabled = false;
-                    loadMessages(sid, cid);
-                    // 채널 목록 리렌더링 (활성화 표시 위해)
-                    window.selectServer(sid, name, ownerId); 
-                };
-                list.appendChild(el);
-            });
-        });
-
-        // 유저 목록 불러오기 (강퇴 기능)
-        onValue(ref(db, `presence/${sid}`), (snap) => {
-            const ulist = document.getElementById('user-list');
-            ulist.innerHTML = '';
-            snap.forEach(u => {
-                const ud = u.val();
-                const kickBtn = (isAdmin && ud.uid !== auth.currentUser.uid) ? 
-                    `<button onclick="kickUser('${sid}','${ud.uid}')" class="ml-auto text-red-500 hover:text-white transition-colors">❌</button>` : '';
-                ulist.innerHTML += `
-                    <div class="flex items-center px-2 py-1.5 hover:bg-[#35373C] rounded group">
-                        <img src="${ud.photo}" class="w-5 h-5 rounded-full mr-2">
-                        <span class="truncate text-xs font-medium">${ud.name}</span>
-                        ${kickBtn}
-                    </div>`;
-            });
-        });
-    };
-
-    // [기능] 채널 추가
-    document.getElementById('add-channel-btn').onclick = () => {
-        const n = prompt("새로운 채널(방 안의 방) 이름:");
-        if(n) set(push(ref(db, `channels/${activeSid}`)), { name: n });
-    };
-
-    // [기능] 유저 강퇴
-    window.kickUser = (sid, uid) => {
-        if(confirm("이 유저를 강제로 퇴장시킬까요?")) remove(ref(db, `presence/${sid}/${uid}`));
-    };
-
-    // [기능] 프로필 수정
-    window.editProfile = () => {
-        const n = prompt("새로운 대화명:", currentUser.customName || currentUser.displayName);
-        const p = prompt("새 프로필 사진(URL):", currentUser.customPhoto || currentUser.photoURL);
-        if(n) {
-            currentUser.customName = n; currentUser.customPhoto = p;
-            document.getElementById('my-name').innerText = n;
-            document.getElementById('my-img').src = p || currentUser.photoURL;
-            alert("프로필이 변경되었습니다. 다음 채팅부터 적용됩니다.");
-        }
-    };
-
-    // 로그인 감지 및 초기 실행
     onAuthStateChanged(auth, (user) => {
         if (user) {
             currentUser = user;
@@ -207,6 +103,56 @@
 
     document.getElementById('login-btn').onclick = () => signInWithPopup(auth, provider).catch(e => console.error(e));
 
+    window.selectServer = (sid, name, ownerId) => {
+        activeSid = sid;
+        document.getElementById('active-server-name').innerText = name;
+        const isAdmin = (ownerId === auth.currentUser?.uid || ownerId === 'admin');
+        document.getElementById('add-channel-btn').style.display = isAdmin ? 'block' : 'none';
+        
+        // 내 정보 등록
+        set(ref(db, `presence/${sid}/${auth.currentUser.uid}`), {
+            name: currentUser.customName || auth.currentUser.displayName,
+            photo: currentUser.customPhoto || auth.currentUser.photoURL,
+            uid: auth.currentUser.uid
+        });
+
+        // 채널 로드
+        onValue(ref(db, `channels/${sid}`), (snap) => {
+            const list = document.getElementById('channel-list');
+            list.innerHTML = '';
+            if(!snap.exists() && isAdmin) push(ref(db, `channels/${sid}`), { name: "일반" });
+            snap.forEach(c => {
+                const cid = c.key; const cname = c.val().name;
+                const el = document.createElement('div');
+                el.className = `channel-item ${activeCid === cid ? 'active-channel' : ''}`;
+                el.innerHTML = `<span class="mr-2">#</span> ${cname}`;
+                el.onclick = () => { activeCid = cid; document.getElementById('active-channel-name').innerText = cname; document.getElementById('chat-input').disabled = false; loadMessages(sid, cid); };
+                list.appendChild(el);
+            });
+        });
+
+        // 유저 로드 (강퇴)
+        onValue(ref(db, `presence/${sid}`), (snap) => {
+            const ulist = document.getElementById('user-list');
+            ulist.innerHTML = '';
+            snap.forEach(u => {
+                const ud = u.val();
+                const kickBtn = (isAdmin && ud.uid !== auth.currentUser.uid) ? `<button onclick="kickUser('${sid}','${ud.uid}')" class="ml-auto text-red-400">❌</button>` : '';
+                ulist.innerHTML += `<div class="flex items-center px-2 py-1 text-xs"><img src="${ud.photo}" class="w-5 h-5 rounded-full mr-2"><span>${ud.name}</span>${kickBtn}</div>`;
+            });
+        });
+    };
+
+    window.kickUser = (sid, uid) => { if(confirm("내보낼까요?")) remove(ref(db, `presence/${sid}/${uid}`)); };
+    
+    window.editProfile = () => {
+        const n = prompt("새 대화명:", currentUser.customName || currentUser.displayName);
+        const p = prompt("새 프로필 URL:", currentUser.customPhoto || currentUser.photoURL);
+        if(n) { currentUser.customName = n; currentUser.customPhoto = p; document.getElementById('my-name').innerText = n; document.getElementById('my-img').src = p || currentUser.photoURL; }
+    };
+
+    document.getElementById('add-channel-btn').onclick = () => { const n = prompt("새 채널명:"); if(n) push(ref(db, `channels/${activeSid}`), { name: n }); };
+
     function loadServerList() {
         onValue(ref(db, 'server_list'), (snap) => {
             const list = document.getElementById('server-list');
@@ -219,9 +165,8 @@
     }
 
     document.getElementById('add-server-btn').onclick = () => {
-        if(!currentUser) return alert("로그인이 필요합니다.");
         const n = prompt("새 서버 이름:");
-        if(n) set(push(ref(db, 'server_list')), { name: n, initial: n[0].toUpperCase(), owner: auth.currentUser.uid });
+        if(n) push(ref(db, 'server_list'), { name: n, initial: n[0].toUpperCase(), owner: auth.currentUser.uid });
     };
 
     function loadMessages(sid, cid) {
@@ -230,17 +175,7 @@
             box.innerHTML = '';
             snap.forEach(m => {
                 const d = m.val();
-                box.innerHTML += `
-                    <div class="flex items-start space-x-3 p-1 hover:bg-[#2e3035] rounded transition-colors">
-                        <img src="${d.photo}" class="w-9 h-9 rounded-full mt-1 border border-gray-700">
-                        <div>
-                            <div class="flex items-baseline space-x-2">
-                                <span class="font-bold text-white text-sm">${d.name}</span>
-                                <span class="text-[9px] text-gray-500">${d.time || ''}</span>
-                            </div>
-                            <p class="text-sm text-[#DBDEE1] break-all leading-relaxed">${d.text}</p>
-                        </div>
-                    </div>`;
+                box.innerHTML += `<div class="flex items-start space-x-3"><img src="${d.photo}" class="w-9 h-9 rounded-full mt-1 border border-gray-700"><div><span class="font-bold text-white text-[13px]">${d.name}</span><p class="text-[#DBDEE1] text-sm">${d.text}</p></div></div>`;
             });
             box.scrollTop = box.scrollHeight;
         });
@@ -254,12 +189,10 @@
             text: input.value,
             name: currentUser.customName || auth.currentUser.displayName,
             photo: currentUser.customPhoto || auth.currentUser.photoURL,
-            time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
             timestamp: serverTimestamp()
         });
         input.value = '';
     };
 </script>
-
 </body>
 </html>
