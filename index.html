@@ -2,176 +2,236 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>STAR TALK - SYNC</title>
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <title>StarChat - Multi Channel System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        :root { --bg: #0a0a0c; --yellow: #fee500; --chat-bg: #abc1d1; --text: #ffffff; }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', sans-serif; }
-        body, html { height: 100%; width: 100%; overflow: hidden; background: var(--bg); color: var(--text); }
-        #auth-ui { position: fixed; inset: 0; background: #000; z-index: 10000; display: flex; align-items: center; justify-content: center; }
-        .auth-card { width: 320px; text-align: center; background: rgba(255,255,255,0.1); padding: 40px 20px; border-radius: 30px; backdrop-filter: blur(10px); }
-        .auth-card input { width: 100%; padding: 15px; margin-bottom: 12px; border-radius: 12px; border: none; outline: none; font-size: 16px; color: #000; }
-        .btn-main { width: 100%; padding: 15px; background: var(--yellow); border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-bottom: 10px; color: #000; }
-        #main-app { display: none; height: 100%; }
-        nav { width: 70px; background: #000; display: flex; flex-direction: column; align-items: center; padding-top: 20px; border-right: 1px solid #222; }
-        .content { flex: 1; background: #fff; color: #000; border-radius: 25px 0 0 0; position: relative; }
-        #chat-window { position: fixed; inset: 0 0 0 70px; background: var(--chat-bg); display: none; flex-direction: column; z-index: 900; }
-        #chat-view { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 8px; }
-        .bubble { padding: 10px; border-radius: 12px; font-size: 14px; max-width: 80%; word-break: break-all; }
-        .me { align-self: flex-end; background: var(--yellow); }
-        .you { align-self: flex-start; background: #fff; }
-        .input-bar { padding: 10px; background: #fff; display: flex; gap: 8px; }
-        #msg-input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 20px; outline: none; }
+        .server-icon { @apply w-12 h-12 bg-[#313338] text-[#23A559] rounded-[24px] flex items-center justify-center hover:bg-[#23A559] hover:text-white transition-all cursor-pointer; }
+        .active-server { border-radius: 16px !important; background-color: #5865F2 !important; color: white !important; }
+        .channel-item { @apply flex items-center px-2 py-1 rounded cursor-pointer text-[#949BA4] hover:bg-[#35373C] hover:text-white transition-all; }
+        .active-channel { @apply bg-[#3F4147] text-white !important; }
     </style>
 </head>
-<body>
+<body class="bg-[#313338] text-[#DBDEE1] font-sans overflow-hidden text-sm">
 
-<div id="auth-ui">
-    <div class="auth-card">
-        <h2 style="margin-bottom:20px;">STAR TALK</h2>
-        <input type="text" id="loginId" placeholder="아이디">
-        <input type="password" id="loginPw" placeholder="비밀번호">
-        <button class="btn-main" onclick="window.doLogin()">로그인</button>
-        <button class="btn-main" style="background:#444; color:#fff;" onclick="window.doSignup()">통합 회원가입</button>
-        <p style="font-size:11px; color:#888; margin-top:10px;">가입 시 기존 스타톡과 새 서버에 동시 등록됩니다.</p>
-    </div>
-</div>
-
-<div id="main-app">
-    <nav><div onclick="window.doLogout()" style="cursor:pointer; font-size:24px;">🚪</div></nav>
-    <div class="content">
-        <div style="padding:20px; font-weight:bold; border-bottom:1px solid #eee;">
-            친구 목록 <span onclick="window.addFriend()" style="float:right; cursor:pointer; background:#000; color:#fff; padding:2px 8px; border-radius:10px; font-size:12px;">+</span>
+<div class="flex h-screen w-full">
+    <nav class="w-[72px] bg-[#1E1F22] flex flex-col items-center py-3 space-y-2 shrink-0">
+        <div id="login-btn" class="server-icon overflow-hidden border-2 border-transparent">
+            <span id="user-status" class="text-[10px] font-bold text-center">로그인</span>
         </div>
-        <div id="friend-list"></div>
-    </div>
-</div>
+        <div class="w-8 h-[2px] bg-[#35363C] rounded-full mx-auto"></div>
+        <div id="server-list" class="flex flex-col space-y-2 w-full items-center"></div>
+        <button id="add-server-btn" class="server-icon text-2xl">+</button>
+    </nav>
 
-<div id="chat-window">
-    <div style="padding:15px; background:rgba(255,255,255,0.2); border-bottom:1px solid rgba(0,0,0,0.1);">
-        <button onclick="window.closeChat()" style="border:none; background:none; cursor:pointer;">◀</button> <b id="chat-target" style="margin-left:10px;"></b>
-    </div>
-    <div id="chat-view"></div>
-    <div class="input-bar">
-        <input type="text" id="msg-input" placeholder="메시지 입력..." onkeypress="if(event.keyCode==13) window.sendMsg()">
-        <button onclick="window.sendMsg()" style="background:var(--yellow); border:none; padding:10px 15px; border-radius:15px; font-weight:bold;">전송</button>
-    </div>
+    <aside class="w-60 bg-[#2B2D31] flex flex-col shrink-0 border-r border-[#1E1F22]">
+        <div id="active-server-name" class="h-12 px-4 flex items-center shadow-md font-bold text-white border-b border-[#1E1F22]">서버 선택</div>
+        
+        <div class="flex-1 overflow-y-auto">
+            <div class="p-3">
+                <div class="flex items-center justify-between text-[11px] font-bold text-[#949BA4] uppercase mb-2 px-2">
+                    <span>채널 목록</span>
+                    <button id="add-channel-btn" class="hidden hover:text-white text-lg">+</button>
+                </div>
+                <div id="channel-list" class="space-y-[2px]"></div>
+            </div>
+
+            <div class="p-3 border-t border-[#35363C]">
+                <div class="text-[11px] font-bold text-[#949BA4] uppercase mb-2 px-2">접속 유저</div>
+                <div id="user-list" class="space-y-1"></div>
+            </div>
+        </div>
+
+        <div id="user-footer" class="p-3 bg-[#232428] hidden">
+            <button onclick="editProfile()" class="w-full text-[10px] bg-[#4E5058] py-1 rounded mb-2">프로필 수정</button>
+            <div class="flex items-center">
+                <img id="my-img" class="w-8 h-8 rounded-full mr-2">
+                <span id="my-name" class="font-bold truncate">유저</span>
+            </div>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col bg-[#313338]">
+        <header class="h-12 px-4 flex items-center shadow-sm border-b border-[#1E1F22] font-bold text-white shrink-0">
+            <span class="text-[#80848E] mr-2 text-xl">#</span>
+            <span id="active-channel-name">채널을 선택하세요</span>
+        </header>
+        <div id="chat-box" class="flex-1 p-4 overflow-y-auto space-y-4"></div>
+        <form id="chat-form" class="p-4 shrink-0">
+            <div class="bg-[#383A40] rounded-lg p-3">
+                <input id="chat-input" type="text" placeholder="메시지 입력..." class="bg-transparent w-full outline-none" disabled autocomplete="off">
+            </div>
+        </form>
+    </main>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, get, onValue, push, off, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, push, set, onValue, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-    // [1] 기존 스타톡 서버
-    const configOld = { 
-        apiKey: "AIzaSyAcBQ_Pyt4kdExDLGyNZJwWGbCdGDzVIjQ", 
-        databaseURL: "https://starchet-e9630-default-rtdb.asia-southeast1.firebasedatabase.app", 
-        projectId: "starchet-e9630" 
+    const firebaseConfig = {
+        apiKey: "AIzaSyAcBQ_Pyt4kdExDLGyNZJwWGbCdGDzVIjQ",
+        authDomain: "starchet-e9630.firebaseapp.com",
+        databaseURL: "https://starchet-e9630-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "starchet-e9630",
+        storageBucket: "starchet-e9630.firebasestorage.app",
+        messagingSenderId: "532571302538",
+        appId: "1:532571302538:web:ee6b941e1a70bcaa02db73"
     };
 
-    // [2] 보내주신 새로운 ID 서버
-    const configNew = { 
-        apiKey: "AIzaSyDtvTt2O90SlBgONaIs2ahWJX_3N_-xjso",
-        authDomain: "id-d5c4d.firebaseapp.com",
-        databaseURL: "https://id-d5c4d-default-rtdb.firebaseio.com", // 주소 형식 자동 보정
-        projectId: "id-d5c4d",
-        storageBucket: "id-d5c4d.firebasestorage.app",
-        messagingSenderId: "593841028206",
-        appId: "1:593841028206:web:fc16e5941b549ac7cbba7f"
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    let currentUser = null;
+    let activeSid = null;
+    let activeCid = null;
+
+    setPersistence(auth, browserLocalPersistence);
+
+    // [서버 입장]
+    window.selectServer = (sid, name, ownerId) => {
+        activeSid = sid;
+        document.getElementById('active-server-name').innerText = name;
+        
+        // 방장 권한 확인 (채널 추가 버튼 표시)
+        const isAdmin = (ownerId === auth.currentUser.uid || ownerId === 'admin');
+        document.getElementById('add-channel-btn').style.display = isAdmin ? 'block' : 'none';
+        
+        // 서버 내 유저 정보 등록
+        set(ref(db, `servers/${sid}/users/${auth.currentUser.uid}`), {
+            name: currentUser.customName || auth.currentUser.displayName,
+            photo: currentUser.customPhoto || auth.currentUser.photoURL,
+            uid: auth.currentUser.uid
+        });
+
+        // 1. 채널 목록 로드 (방 안에 방)
+        onValue(ref(db, `servers/${sid}/channels`), (snap) => {
+            const list = document.getElementById('channel-list');
+            list.innerHTML = '';
+            if (!snap.exists()) {
+                // 채널이 없으면 기본 '일반' 채널 자동 생성
+                if (isAdmin) createChannel('일반');
+            }
+            snap.forEach(c => {
+                const cid = c.key;
+                const cname = c.val().name;
+                const el = document.createElement('div');
+                el.className = `channel-item ${activeCid === cid ? 'active-channel' : ''}`;
+                el.innerHTML = `<span class="mr-2 text-lg">#</span> ${cname}`;
+                el.onclick = () => selectChannel(cid, cname);
+                list.appendChild(el);
+            });
+        });
+
+        // 2. 유저 목록 로드 (강퇴 기능 포함)
+        onValue(ref(db, `servers/${sid}/users`), (snap) => {
+            const ulist = document.getElementById('user-list');
+            ulist.innerHTML = '';
+            snap.forEach(u => {
+                const ud = u.val();
+                const kickBtn = (isAdmin && ud.uid !== auth.currentUser.uid) ? `<button onclick="kickUser('${sid}','${ud.uid}')" class="ml-auto text-red-400">❌</button>` : '';
+                ulist.innerHTML += `<div class="flex items-center px-2 py-1"><img src="${ud.photo}" class="w-5 h-5 rounded-full mr-2"><span>${ud.name}</span>${kickBtn}</div>`;
+            });
+        });
     };
 
-    const appOld = initializeApp(configOld, "old");
-    const appNew = initializeApp(configNew, "new");
-    const dbOld = getDatabase(appOld);
-    const dbNew = getDatabase(appNew);
+    // [채널 선택]
+    window.selectChannel = (cid, cname) => {
+        activeCid = cid;
+        document.getElementById('active-channel-name').innerText = cname;
+        document.getElementById('chat-input').disabled = false;
+        loadMessages(activeSid, cid);
+    };
 
-    let myId, activeRid;
+    // [방장의 채널 추가]
+    document.getElementById('add-channel-btn').onclick = () => {
+        const name = prompt("새 채널 이름:");
+        if (name) createChannel(name);
+    };
 
-    // 통합 회원가입 (양쪽 DB에 저장)
-    window.doSignup = async () => {
-        const id = document.getElementById('loginId').value.trim().toLowerCase();
-        const pw = document.getElementById('loginPw').value.trim();
-        if(!id || !pw) return alert("아이디와 비밀번호를 입력하세요!");
+    function createChannel(name) {
+        const newRef = push(ref(db, `servers/${activeSid}/channels`));
+        set(newRef, { name: name });
+    }
 
-        try {
-            await Promise.all([
-                set(ref(dbOld, `users/${id}`), { id, pw }),
-                set(ref(dbNew, `users/${id}`), { id, pw })
-            ]);
-            alert("통합 회원가입 완료! 이제 로그인 하세요.");
-        } catch(e) { 
-            alert("가입 실패: 파이어베이스 'Rules' 설정을 확인하세요."); 
+    // [유저 강퇴]
+    window.kickUser = (sid, uid) => {
+        if (confirm("강퇴하시겠습니까?")) remove(ref(db, `servers/${sid}/users/${uid}`));
+    };
+
+    // [프로필 수정]
+    window.editProfile = () => {
+        const n = prompt("이름:", currentUser.displayName);
+        const p = prompt("사진URL:", currentUser.photoURL);
+        if (n) {
+            currentUser.customName = n; currentUser.customPhoto = p;
+            document.getElementById('my-name').innerText = n;
+            document.getElementById('my-img').src = p || currentUser.photoURL;
         }
     };
 
-    // 로그인 (기존 서버 데이터 기준)
-    window.doLogin = async () => {
-        const id = document.getElementById('loginId').value.trim().toLowerCase();
-        const pw = document.getElementById('loginPw').value.trim();
-        const snap = await get(ref(dbOld, `users/${id}`));
-        
-        if(snap.exists() && snap.val().pw === pw) {
-            myId = id; localStorage.setItem('st_id', id); startApp();
-        } else alert("아이디 또는 비밀번호가 틀립니다.");
-    };
+    // 초기 로그인 설정
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            currentUser = user;
+            document.getElementById('user-footer').classList.remove('hidden');
+            document.getElementById('my-img').src = user.photoURL;
+            document.getElementById('my-name').innerText = user.displayName;
+            document.getElementById('user-status').innerHTML = `<img src="${user.photoURL}" class="w-full h-full object-cover">`;
+            
+            // StarChat 공식서버 자동 입장
+            selectServer('official', 'StarChat 공식서버', 'admin');
+            loadServerList();
+        }
+    });
 
-    function startApp() {
-        document.getElementById('auth-ui').style.display = 'none';
-        document.getElementById('main-app').style.display = 'flex';
-        loadFriends();
-    }
+    document.getElementById('login-btn').onclick = () => signInWithPopup(auth, provider);
 
-    window.openChat = (fid) => {
-        if(activeRid) off(ref(dbOld, `msgs/${activeRid}`));
-        activeRid = [myId, fid].sort().join('_');
-        document.getElementById('chat-target').innerText = fid;
-        document.getElementById('chat-window').style.display = 'flex';
-
-        onValue(ref(dbOld, `msgs/${activeRid}`), snap => {
-            const v = document.getElementById('chat-view'); v.innerHTML = "";
-            if(snap.exists()) {
-                Object.values(snap.val()).forEach(m => {
-                    const d = document.createElement('div');
-                    d.className = `bubble ${m.s === myId ? 'me' : 'you'}`;
-                    d.innerText = m.t;
-                    v.appendChild(d);
-                });
-            }
-            v.scrollTop = v.scrollHeight;
-        });
-    };
-
-    window.sendMsg = () => {
-        const i = document.getElementById('msg-input');
-        if(!i.value.trim()) return;
-        push(ref(dbOld, `msgs/${activeRid}`), { s: myId, t: i.value.trim(), time: serverTimestamp() });
-        i.value = ""; i.focus();
-    };
-
-    window.addFriend = () => {
-        const f = prompt("추가할 친구 ID:");
-        if(f && f !== myId) set(ref(dbOld, `friends/${myId}/${f}`), true);
-    };
-
-    function loadFriends() {
-        onValue(ref(dbOld, `friends/${myId}`), snap => {
-            const list = document.getElementById('friend-list'); list.innerHTML = "";
-            if(snap.exists()) {
-                Object.keys(snap.val()).forEach(fid => {
-                    const d = document.createElement('div');
-                    d.style.padding = "15px 20px"; d.style.borderBottom = "1px solid #eee"; d.style.cursor = "pointer";
-                    d.innerHTML = `<b>${fid}</b>`;
-                    d.onclick = () => window.openChat(fid);
-                    list.appendChild(d);
-                });
-            }
+    function loadServerList() {
+        onValue(ref(db, 'server_list'), (snap) => {
+            const list = document.getElementById('server-list');
+            list.innerHTML = `<div onclick="selectServer('official','StarChat 공식서버','admin')" class="server-icon mb-2">S</div>`;
+            snap.forEach(s => {
+                const d = s.val();
+                list.innerHTML += `<div onclick="selectServer('${s.key}','${d.name}','${d.owner}')" class="server-icon mb-2">${d.initial}</div>`;
+            });
         });
     }
 
-    window.closeChat = () => document.getElementById('chat-window').style.display = 'none';
-    window.doLogout = () => { localStorage.clear(); location.reload(); };
-    if(localStorage.getItem('st_id')) { myId = localStorage.getItem('st_id'); startApp(); }
+    document.getElementById('add-server-btn').onclick = () => {
+        const n = prompt("서버 이름:");
+        if (n) {
+            const r = push(ref(db, 'server_list'));
+            set(r, { name: n, initial: n[0].toUpperCase(), owner: auth.currentUser.uid });
+        }
+    };
+
+    function loadMessages(sid, cid) {
+        onValue(ref(db, `chats/${sid}/${cid}`), (snap) => {
+            const box = document.getElementById('chat-box');
+            box.innerHTML = '';
+            snap.forEach(m => {
+                const d = m.val();
+                box.innerHTML += `<div class="flex items-start space-x-3"><img src="${d.photo}" class="w-9 h-9 rounded-full mt-1"><div><div class="flex items-baseline space-x-2"><span class="font-bold text-white text-sm">${d.name}</span></div><p class="text-sm text-gray-200">${d.text}</p></div></div>`;
+            });
+            box.scrollTop = box.scrollHeight;
+        });
+    }
+
+    document.getElementById('chat-form').onsubmit = (e) => {
+        e.preventDefault();
+        const input = document.getElementById('chat-input');
+        if (!input.value || !activeSid || !activeCid) return;
+        push(ref(db, `chats/${activeSid}/${activeCid}`), {
+            text: input.value,
+            name: currentUser.customName || auth.currentUser.displayName,
+            photo: currentUser.customPhoto || auth.currentUser.photoURL,
+            timestamp: serverTimestamp()
+        });
+        input.value = '';
+    };
 </script>
 </body>
 </html>
